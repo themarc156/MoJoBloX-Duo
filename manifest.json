@@ -1,0 +1,16 @@
+{
+  "name": "MoJoBloX Duo",
+  "short_name": "MoJoBloX",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#00adb5",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "1000x1000",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
