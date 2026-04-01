@@ -1,1 +1,1233 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MoJoBloX Duo</title>
 
+    <link rel="manifest" href="manifest.json">
+    
+    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="icon" type="image/png" href="icon.png">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" crossorigin="anonymous"></script>
+
+    <style>
+        :root {
+            --bg-color: #121212;
+            --accent-color: #00adb5;
+            --lock-color: #ff4d4d;
+            --text-color: #eeeeee;
+            --card-bg: #2a2a2a;
+            --delete-red: #ff4d4d;
+            --f-none: #1e1e1e; --f-blue: #0a2647; --f-red: #4a0e0e; --f-green: #0e3a1a; --f-gold: #3d3000;
+            --safe-track-color: #00adb5;
+            --dj2-color: #ffaa00;
+            --success-green: #2ecc71;
+        }
+
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg-color); color: var(--text-color); margin: 0; user-select: none; touch-action: pan-y; overflow-x: hidden; padding-bottom: 70px; }
+
+        header { 
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            background: #222; 
+            padding: 12px; 
+            border-bottom: 2px solid var(--accent-color); 
+            text-align: center; 
+            font-weight: bold; 
+            color: var(--accent-color); 
+            letter-spacing: 1px;
+            position: sticky; 
+            top: 0;           
+            z-index: 1002;    
+            transition: border-color 0.3s;
+        }
+
+        .header-left-group {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-start;
+            align-items: center;
+            position: relative; 
+        }
+
+        .header-title { 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            gap: 10px;
+            justify-self: center; 
+        }
+
+        .header-right-group {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            align-items: center;
+        }
+        
+        .header-btn {
+            font-size: 18px;
+            cursor: pointer;
+            padding: 5px;
+            background: #333;
+            border-radius: 5px;
+            border: 1px solid var(--accent-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        body.edit-mode #header-btn-left { background: var(--accent-color); color: white; }
+
+        .page { padding: 12px; } 
+        
+        .input-section { 
+            display: flex; 
+            gap: 8px; 
+            margin-bottom: 10px; 
+            position: sticky; 
+            top: 48px; 
+            z-index: 1001; 
+            background: var(--bg-color); 
+            padding: 8px 0; 
+            align-items: center;
+        }
+        
+        input[type="text"] { padding: 10px; border-radius: 6px; border: 1px solid #444; background: #252525; color: white; outline: none; font-size: 16px; flex-grow: 1; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .btn-plus { background: var(--accent-color); color: white; border: none; width: 45px; height: 40px; border-radius: 6px; font-weight: bold; font-size: 22px; cursor: pointer; }
+
+        .btn-folder-select {
+            background: #252525;
+            color: #aaa;
+            border: 1px solid #444;
+            width: 45px;
+            height: 40px;
+            border-radius: 6px;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transition: all 0.2s;
+        }
+        .btn-folder-select.active {
+            border-color: var(--success-green);
+            color: var(--success-green);
+            background: #1a2e22;
+        }
+
+        .btn-add-block { 
+            background: #1e1e1e; 
+            color: var(--accent-color); 
+            border: 1px solid var(--accent-color); 
+            padding: 10px; 
+            border-radius: 8px; 
+            width: 100%; 
+            font-weight: bold; 
+            margin-bottom: 15px; 
+            cursor: pointer;
+            position: sticky; 
+            top: 112px; 
+            z-index: 1000;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .song-card { 
+            background: var(--card-bg); 
+            margin-bottom: 4px; 
+            padding: 10px 12px;  
+            border-radius: 6px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            font-size: 0.95rem; 
+            border: 1.5px solid rgba(255,255,255,0.05); 
+            cursor: grab; 
+            transition: all 0.3s ease;
+            min-height: 32px; 
+        }
+        .song-card:active { cursor: grabbing; }
+
+        /* NEU: Visueller Status für spielende Songs */
+        .song-card.is-playing {
+            border-color: var(--success-green) !important;
+            box-shadow: 0 0 15px rgba(46, 204, 113, 0.4), inset 0 0 5px rgba(46, 204, 113, 0.2);
+            background: rgba(46, 204, 113, 0.08);
+            transform: scale(1.01);
+        }
+
+        .song-details {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            flex-grow: 1;
+            overflow: hidden;
+        }
+        .song-title-text {
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .song-artist-text {
+            font-size: 0.75rem;
+            color: #aaa;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        body.edit-mode .song-details { cursor: pointer; }
+        body.edit-mode .song-details:hover .song-title-text { text-decoration: underline dotted var(--accent-color); }
+
+        body.user-dj1 .song-card.match-found { border: 1.5px solid var(--safe-track-color) !important; box-shadow: 0 0 5px rgba(0, 173, 181, 0.3); }
+        body.user-dj2 .song-card.match-found { border: 1.5px solid var(--dj2-color) !important; box-shadow: 0 0 5px rgba(255, 170, 0, 0.3); }
+        
+        .color-dot { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; cursor: pointer; }
+        .sortable-ghost { opacity: 0.1; background: var(--accent-color) !important; }
+        
+        #blocklist-container > .song-card { border-left: 4px solid var(--accent-color); }
+        body.user-dj2 #blocklist-container > .song-card { border-left: 4px solid var(--dj2-color) !important; }
+
+        .block-item { margin-bottom: 4px; position: relative; border-radius: 8px; overflow: hidden; }
+        .block-item.collapsed { background: #1a1a1a !important; }
+        .block-item.collapsed .block-header strong { text-decoration: none !important; }
+        .block-header { padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; }
+        .block-header strong { font-size: 1rem; flex-grow: 1; cursor: pointer; padding: 3px; }
+        body.edit-mode .block-header strong { cursor: cell; text-decoration: underline dotted var(--accent-color); }
+
+        .block-song-count { font-size: 0.85rem; opacity: 0.7; margin-left: 4px; font-weight: normal; }
+        .block-content { padding: 8px; padding-bottom: 4px; } 
+        .block-item.collapsed .block-content { display: none; }
+        .block-item:not(.collapsed) .block-content { display: block; }
+
+        .collapse-icon { transition: transform 0.3s; margin-right: 12px; font-size: 1.1rem; cursor: pointer; padding: 3px; transform: rotate(-90deg); }
+        .block-item:not(.collapsed) .collapse-icon { transform: rotate(0deg); }
+        .block-sortable-list { min-height: 20px; }
+
+        .delete-btn { 
+            display: none !important; 
+            color: var(--delete-red); 
+            cursor: pointer; 
+            font-weight: bold; 
+            font-size: 24px; 
+            padding: 10px 15px; 
+            margin: -10px -10px -10px auto; 
+            pointer-events: auto !important; 
+        }
+        body.edit-mode .delete-btn { display: inline-block !important; }
+        
+        .color-dot { display: none !important; }
+        body.edit-mode .color-dot { display: block !important; }
+
+        .play-preview-btn {
+            display: inline-block;
+            color: var(--accent-color);
+            cursor: pointer;
+            font-size: 16px;
+            padding: 8px 12px;
+            margin: -10px auto -10px 5px;
+            border-radius: 4px;
+            transition: background 0.2s;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .play-preview-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .play-preview-btn.playing {
+            color: var(--success-green);
+        }
+        body.edit-mode .play-preview-btn { display: none !important; }
+        body.user-diff .play-preview-btn { display: none !important; }
+
+        .drag-handle { cursor: grab; font-size: 18px; color: #666; padding: 5px 8px; margin-left: 12px; }
+        .drag-handle:active { cursor: grabbing; }
+
+        footer {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: #1a1a1a; border-top: 1px solid #333;
+            display: flex; justify-content: space-around; padding: 10px; z-index: 1003;
+        }
+        .footer-btn {
+            background: #252525; color: #aaa; border: 1px solid #444; padding: 6px 12px;
+            border-radius: 15px; font-size: 0.9rem; cursor: pointer; font-weight: bold;
+            transition: all 0.2s; min-width: 80px; text-align: center;
+            display: flex; flex-direction: column; align-items: center; gap: 2px;
+        }
+        .footer-btn.active { background: var(--accent-color); color: white; border-color: var(--accent-color); }
+        .btn-counter { font-size: 0.7rem; opacity: 0.7; font-weight: normal; }
+        .footer-btn.active .btn-counter { opacity: 0.9; }
+        
+        .safe-tag { color: #fff; font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: auto; margin-right: 10px; }
+        body.user-dj1 .safe-tag { background: var(--safe-track-color); }
+        body.user-dj2 .safe-tag { background: var(--dj2-color); color: #121212; }
+
+        .drop-target-area {
+            background: #1e1e1e; border: 2px dashed var(--accent-color); border-radius: 8px;
+            padding: 15px; text-align: center; color: var(--accent-color); font-weight: bold; margin-bottom: 15px;
+            transition: all 0.3s; position: sticky; top: 48px; z-index: 1001; box-shadow: 0 4px 10px rgba(0,0,0,0.5); 
+        }
+        
+        .song-type-icon { margin-left: auto; margin-right: 10px; opacity: 0.6; font-size: 0.9rem; }
+        body.user-diff .song-card { cursor: default !important; user-select: none !important; -webkit-user-drag: none !important; }
+
+        .diff-section-header { display: flex; align-items: center; opacity: 0.7; margin-top: 15px; margin-bottom: 5px; font-size: 0.9rem; cursor: pointer; padding: 4px 0; }
+        .diff-section-header .collapse-icon { margin-right: 6px; }
+        .diff-section-content { display: block; }
+        .diff-section-content.collapsed { display: none; }
+
+        .diff-takeover-btn {
+            background: #333; color: var(--accent-color); border: 1px solid var(--accent-color);
+            border-radius: 4px; padding: 4px 8px; font-size: 0.8rem; font-weight: bold;
+            cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center;
+        }
+        .diff-takeover-btn:active { transform: scale(0.95); background: var(--accent-color); color: #fff; }
+
+        #pdf-template { display: none; color: #000; background: #fff; padding: 15px; font-family: Arial, sans-serif; }
+        #pdf-template h1 { font-size: 20px; border-bottom: 2px solid #000; padding-bottom: 5px; margin-bottom: 10px; }
+        #pdf-template h2 { font-size: 15px; margin-top: 15px; border-bottom: 1px solid #999; padding-bottom: 3px; margin-bottom: 8px; color: #333; }
+        #pdf-template h3 { font-size: 12px; margin-top: 10px; margin-bottom: 4px; color: #555; text-transform: uppercase; }
+        #pdf-template .pdf-page { page-break-before: always; }
+        #pdf-template .pdf-page:first-child { page-break-before: auto; }
+        
+        .pdf-auto-columns { columns: 2; column-gap: 30px; column-fill: auto; height: 240mm; orphans: 1; widows: 1; }
+        .pdf-columns-container { display: grid; grid-template-columns: 1fr 1fr; column-gap: 30px; align-items: start; }
+        .pdf-song-item { padding: 3px 0; border-bottom: 1px solid #eee; font-size: 12px; color: #333; }
+        .pdf-block-title { font-weight: bold; margin-top: 8px; font-size: 13px; text-decoration: underline; color: #000; }
+        .pdf-keep-together { break-inside: avoid-column; page-break-inside: avoid; margin-bottom: 10px; }
+
+        body.clean-mode .block-header { display: none !important; }
+        body.clean-mode .block-item { background: transparent !important; margin-bottom: 0px; border-radius: 0; overflow: visible; border-bottom: 1px dashed #444; padding-bottom: 6px; margin-top: 6px; }
+        body.clean-mode .block-content { padding: 0; }
+        body.clean-mode .block-item:last-child { border-bottom: none; }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 35px;
+            left: 0;
+            background: #252525;
+            border: 1px solid var(--accent-color);
+            border-radius: 6px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            z-index: 2000;
+            min-width: 190px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .dropdown-menu.active { display: block; }
+        .dropdown-item {
+            padding: 10px 15px;
+            font-size: 0.9rem;
+            color: #eee;
+            cursor: pointer;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .dropdown-item:hover { background: #333; }
+        .dropdown-item.action-save { color: var(--accent-color); font-weight: bold; }
+        .dropdown-item .delete-saved { color: var(--delete-red); font-size: 1.2rem; padding: 0 5px; }
+        .dropdown-item .delete-saved:hover { color: #fff; }
+
+        /* Kompakte Crossfade-Steuerung in der Kachel */
+        .crossfade-btn-group {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-left: auto;
+            margin-right: 5px;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            user-select: none;
+        }
+        
+        .crossfade-toggle-btn {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+            color: #FF5500;
+            transition: color 0.2s;
+            font-size: 14px;
+        }
+        
+        .crossfade-toggle-btn.disabled {
+            color: #666 !important;
+            opacity: 0.5;
+        }
+
+        .crossfade-time-display {
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #aaa;
+            min-width: 24px;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        /* Das kleine Einstellungs-Overlay bei Long Press */
+        .crossfade-popup-slider {
+            position: fixed;
+            bottom: 75px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #252525;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 1px solid var(--accent-color);
+            z-index: 2000;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 260px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+        .crossfade-popup-slider.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .popup-label {
+            font-size: 0.8rem;
+            color: #ccc;
+            display: flex;
+            justify-content: space-between;
+        }
+        .popup-label span { color: var(--accent-color); font-weight: bold; }
+        
+        .crossfade-slider {
+            width: 100%;
+            -webkit-appearance: none;
+            background: #444;
+            height: 6px;
+            border-radius: 3px;
+            outline: none;
+        }
+        .crossfade-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            cursor: pointer;
+        }
+        body.edit-mode .crossfade-btn-group { display: none !important; }
+        body.user-diff .crossfade-btn-group { display: none !important; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-left-group">
+        <div class="header-btn" id="header-btn-left" onclick="headerActionLeft()" title="Aktion links">✏️</div>
+        <div class="header-btn" id="header-btn-save" onclick="window.toggleDropdown()" title="Set speichern oder laden">💾</div>
+        
+        <div class="dropdown-menu" id="save-dropdown">
+            <div class="dropdown-item action-save" onclick="saveCurrentAsTemplate()">📥 Aktuelles Set speichern</div>
+            <div id="saved-lists-container"></div>
+        </div>
+    </div>
+
+    <div class="header-title" onclick="toggleLock()">
+        MoJoBloX Duo<span id="lock-icon">🔒</span>
+    </div>
+    
+    <div class="header-right-group">
+        <div class="header-btn" id="header-btn-eye" onclick="toggleCleanMode()" title="Ansichten filtern">👁️</div>
+        <div class="header-btn" id="header-btn-right" onclick="headerActionRight()" title="Auf-/Zuklappen">↕️</div>
+    </div>
+</header>
+
+<div id="page-blocklist" class="page">
+    <div class="input-section" id="ui-input-section">
+        <div class="btn-folder-select" id="btn-folder-select" onclick="window.triggerFolderSelection()" title="Lokalen Musikordner verknüpfen">📁</div>
+        
+        <input type="text" id="blocklistInputGlobal" placeholder="Song schnell hinzufügen..." 
+               onkeydown="if(event.key==='Enter') addSongToTopList()">
+        <button class="btn-plus" onclick="addSongToTopList()">+</button>
+    </div>
+    <button class="btn-add-block" id="ui-add-block-btn" onclick="addNewBlockPrompt()">+ NEUER BLOCK / ORDNER</button>
+    
+    <div id="takeover-infozone" class="drop-target-area" style="display:none; border-style: solid;">👉 TIPPE AUF DAS (+), UM ES ZU ÜBERNEHMEN</div>
+    
+    <div id="blocklist-container">Lade Daten...</div>
+</div>
+
+<div id="crossfade-popup" class="crossfade-popup-slider">
+    <div class="popup-label">Übergangszeit: <span id="popup-val-display">20s</span></div>
+    <input type="range" class="crossfade-slider" min="5" max="40" value="20" oninput="updateCrossfadeTime(this.value)">
+</div>
+
+<div id="pdf-template"></div>
+
+<footer>
+    <div class="footer-btn active" id="btn-user1" onclick="switchUser('dj1')">
+        <span>Marc</span>
+        <span class="btn-counter" id="cnt-dj1">0 Songs</span>
+    </div>
+    <div class="footer-btn" id="btn-diff" onclick="switchUser('diff')">
+        <span>???</span>
+        <span class="btn-counter" id="cnt-diff">0 Songs</span>
+    </div>
+    <div class="footer-btn" id="btn-user2" onclick="switchUser('dj2')">
+        <span>Gunnar</span>
+        <span class="btn-counter" id="cnt-dj2">0 Songs</span>
+    </div>
+</footer>
+
+<script>
+    let DEFAULT_CROSSFADE = 20;   
+    let directoryHandle = null; 
+    let activePlayBtn = null;
+
+    let popupTimer = null;
+    let longPressTimer = null;
+    let currentlyEditingSongCard = null; // Speichert die Kachel, die gerade justiert wird
+
+    // Zwei Player für das unterbrechungsfreie Ineinander-Spielen
+    let audio1 = new Audio();
+    let audio2 = new Audio();
+    let currentPlayer = audio1;
+    let nextPlayer = audio2;
+
+    // Timer & Intervalle für Audio
+    let fadeInInterval = null;
+    let nextSongTriggered = false; // Schutz gegen doppeltes Triggern im Event
+
+    // NEU: Hilfsfunktion für die visuelle Markierung
+    function updateVisualPlayingState(card) {
+        document.querySelectorAll('.song-card').forEach(c => c.classList.remove('is-playing'));
+        if (card) {
+            card.classList.add('is-playing');
+        }
+    }
+
+    // Slider-Wert updaten
+    window.updateCrossfadeTime = function(val) {
+        document.getElementById('popup-val-display').innerText = val + 's';
+        
+        if (currentlyEditingSongCard) {
+            const display = currentlyEditingSongCard.querySelector('.crossfade-time-display');
+            const toggleBtn = currentlyEditingSongCard.querySelector('.crossfade-toggle-btn');
+            
+            if (display) display.innerText = val + 's';
+            if (toggleBtn) toggleBtn.classList.remove('disabled'); 
+            
+            window.saveData();
+        }
+        showCrossfadePopup();
+    };
+
+    // Popup einblenden
+    window.showCrossfadePopup = function() {
+        const popup = document.getElementById('crossfade-popup');
+        popup.classList.add('active');
+        
+        if (popupTimer) clearTimeout(popupTimer);
+        popupTimer = setTimeout(() => {
+            popup.classList.remove('active');
+            currentlyEditingSongCard = null; 
+        }, 3000); 
+    };
+
+    // Crossfade für EINE SPEZIFISCHE Kachel umschalten
+    window.toggleCrossfadeState = function(cardElement) {
+        const toggleBtn = cardElement.querySelector('.crossfade-toggle-btn');
+        const display = cardElement.querySelector('.crossfade-time-display');
+        
+        if (!toggleBtn || !display) return;
+
+        if (toggleBtn.classList.contains('disabled')) {
+            toggleBtn.classList.remove('disabled');
+            let sVal = parseInt(display.innerText);
+            if (sVal === 0) display.innerText = DEFAULT_CROSSFADE + 's';
+        } else {
+            toggleBtn.classList.add('disabled');
+            display.innerText = '0s';
+        }
+        window.saveData();
+    };
+
+    // Long Press & Click Handler für die Crossfade-Buttons
+    window.setupCrossfadeEvents = function(cardElement) {
+        const cfGroup = cardElement.querySelector('.crossfade-btn-group');
+        const display = cardElement.querySelector('.crossfade-time-display');
+        const slider = document.querySelector('.crossfade-slider');
+        
+        if (!cfGroup) return;
+
+        const start = (e) => {
+            if (userStates[currentUser].editMode) return; 
+            longPressTimer = setTimeout(() => {
+                currentlyEditingSongCard = cardElement;
+                let currentVal = parseInt(display.innerText) || DEFAULT_CROSSFADE;
+                if (currentVal === 0) currentVal = DEFAULT_CROSSFADE;
+                
+                slider.value = currentVal;
+                document.getElementById('popup-val-display').innerText = currentVal + 's';
+                
+                showCrossfadePopup();
+            }, 700); 
+        };
+        const cancel = (e) => {
+            if (longPressTimer) clearTimeout(longPressTimer);
+        };
+        
+        cfGroup.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (longPressTimer) clearTimeout(longPressTimer);
+            window.toggleCrossfadeState(cardElement);
+        });
+        
+        cfGroup.addEventListener('touchstart', start, {passive: true});
+        cfGroup.addEventListener('touchend', cancel);
+        cfGroup.addEventListener('touchmove', cancel);
+        
+        cfGroup.addEventListener('mousedown', start);
+        cfGroup.addEventListener('mouseup', cancel);
+        cfGroup.addEventListener('mouseleave', cancel);
+    };
+
+    window.triggerFolderSelection = async function() {
+        const btn = document.getElementById('btn-folder-select');
+        try {
+            directoryHandle = await window.showDirectoryPicker();
+            btn.classList.add('active');
+            alert("Ordner erfolgreich verknüpft! Die Übergänge funktionieren nun mit deinen lokalen Dateien.");
+        } catch (err) {
+            console.log("Ordnerauswahl abgebrochen oder nicht unterstützt.", err);
+            btn.classList.remove('active');
+        }
+    };
+
+    function findeNaechsteKarte(aktuellerButton) {
+        const aktuelleKarte = aktuellerButton.closest('.song-card');
+        if (!aktuelleKarte) return null;
+
+        const container = document.getElementById('blocklist-container');
+        const alleElemente = Array.from(container.children);
+        const alleSongKarten = [];
+        
+        alleElemente.forEach(element => {
+            if (element.classList.contains('song-card')) {
+                alleSongKarten.push(element);
+            } else if (element.classList.contains('block-item')) {
+                const songsImBlock = element.querySelectorAll('.block-sortable-list .song-card');
+                songsImBlock.forEach(song => alleSongKarten.push(song));
+            }
+        });
+
+        const aktuellerIndex = alleSongKarten.indexOf(aktuelleKarte);
+        
+        if (aktuellerIndex !== -1 && aktuellerIndex < alleSongKarten.length - 1) {
+            return alleSongKarten[aktuellerIndex + 1];
+        }
+        return null; 
+    }
+
+    // Hilfsfunktion zum Hereinfaden eines Players
+    function fadeInPlayer(player, durationSec) {
+        if (fadeInInterval) clearInterval(fadeInInterval);
+        
+        player.volume = 0;
+        player.play();
+
+        const step = 0.02; // Wie stark die Lautstärke pro Schritt steigt
+        const intervalTime = (durationSec * 1000) * step; 
+        
+        fadeInInterval = setInterval(() => {
+            if (player.volume < 1 - step) {
+                player.volume += step;
+            } else {
+                player.volume = 1;
+                clearInterval(fadeInInterval);
+            }
+        }, intervalTime);
+    }
+
+    window.playPreview = async function(e, title, artist = '', isAutoplayNext = false, forceDisabled = false, forcedCfTime = 20) {
+        if (e) e.stopPropagation(); 
+        let clickedBtn = e ? e.currentTarget : null;
+        let currentCard = clickedBtn ? clickedBtn.closest('.song-card') : null;
+
+        // Suche die Kachel bei Autoplay nur für die UI
+        if (isAutoplayNext && !clickedBtn) {
+            const alleKarten = document.querySelectorAll('.song-card');
+            for (let karte of alleKarten) {
+                const titleText = karte.querySelector('.song-title-text').innerText;
+                if (titleText === title) {
+                    clickedBtn = karte.querySelector('.play-preview-btn');
+                    currentCard = karte;
+                    break;
+                }
+            }
+        }
+
+        // Visuelles Feedback setzen
+        if (currentCard) updateVisualPlayingState(currentCard);
+
+        // Stop-Trigger
+        if (!isAutoplayNext && activePlayBtn === clickedBtn) {
+            audio1.pause(); audio1.src = ''; audio1.volume = 1;
+            audio2.pause(); audio2.src = ''; audio2.volume = 1;
+            audio1.ontimeupdate = null; audio2.ontimeupdate = null;
+            audio1.onloadedmetadata = null; audio2.onloadedmetadata = null;
+            if (fadeInInterval) clearInterval(fadeInInterval);
+            
+            clickedBtn.innerText = '▶️';
+            clickedBtn.classList.remove('playing');
+            updateVisualPlayingState(null); // Leuchten entfernen
+            activePlayBtn = null;
+            return;
+        }
+
+        if (activePlayBtn && activePlayBtn !== clickedBtn && !isAutoplayNext) {
+            activePlayBtn.innerText = '▶️';
+            activePlayBtn.classList.remove('playing');
+        }
+
+        if (clickedBtn) {
+            clickedBtn.innerText = '⏳'; 
+            activePlayBtn = clickedBtn;
+        }
+
+        let currentCrossfadeTime = isAutoplayNext ? forcedCfTime : DEFAULT_CROSSFADE;
+        let isCrossfadeDisabled = isAutoplayNext ? forceDisabled : false;
+
+        if (!isAutoplayNext && currentCard) {
+            const timeDisplay = currentCard.querySelector('.crossfade-time-display');
+            const toggleBtn = currentCard.querySelector('.crossfade-toggle-btn');
+            if (timeDisplay) currentCrossfadeTime = parseInt(timeDisplay.innerText) || 0;
+            if (toggleBtn && toggleBtn.classList.contains('disabled')) isCrossfadeDisabled = true;
+        }
+        
+        if (currentCrossfadeTime === 0) currentCrossfadeTime = 5; 
+
+        if (directoryHandle) {
+            try {
+                const searchName = title.toLowerCase().trim();
+                let fileToPlay = null;
+
+                for await (const entry of directoryHandle.values()) {
+                    if (entry.kind === 'file') {
+                        const lowerName = entry.name.toLowerCase();
+                        if (lowerName.includes(searchName) && (lowerName.endsWith('.mp3') || lowerName.endsWith('.m4a'))) {
+                            fileToPlay = await entry.getFile();
+                            break;
+                        }
+                    }
+                }
+
+                if (!fileToPlay) {
+                    alert(`Datei für "${title}" wurde im Ordner nicht gefunden.`);
+                    if (clickedBtn) clickedBtn.innerText = '▶️';
+                    updateVisualPlayingState(null);
+                    activePlayBtn = null;
+                    return;
+                }
+
+                const url = URL.createObjectURL(fileToPlay);
+
+                if (isAutoplayNext) {
+                    currentPlayer = (currentPlayer === audio1) ? audio2 : audio1;
+                    currentPlayer.src = url;
+                    if (isCrossfadeDisabled) {
+                        if (fadeInInterval) clearInterval(fadeInInterval);
+                        currentPlayer.volume = 1;
+                        currentPlayer.play();
+                    } else {
+                        fadeInPlayer(currentPlayer, currentCrossfadeTime);
+                    }
+                } else {
+                    if (fadeInInterval) clearInterval(fadeInInterval);
+                    audio1.pause(); audio2.pause();
+                    audio1.ontimeupdate = null; audio2.ontimeupdate = null;
+                    audio1.onloadedmetadata = null; audio2.onloadedmetadata = null;
+                    audio1.volume = 1; audio2.volume = 1;
+                    currentPlayer = audio1;
+                    nextPlayer = audio2;
+                    currentPlayer.src = url;
+                }
+
+                nextSongTriggered = false;
+
+                currentPlayer.onloadedmetadata = () => {
+                    if (!isAutoplayNext) {
+                        const startPoint = Math.max(0, currentPlayer.duration - 20);
+                        currentPlayer.currentTime = startPoint;
+                        currentPlayer.play();
+                    }
+                };
+
+                currentPlayer.onplay = () => {
+                    if (clickedBtn) {
+                        clickedBtn.innerText = '⏹️';
+                        clickedBtn.classList.add('playing');
+                    }
+                };
+
+                currentPlayer.ontimeupdate = () => {
+                    const timeLeft = currentPlayer.duration - currentPlayer.currentTime;
+                    if (timeLeft <= currentCrossfadeTime && !nextSongTriggered) {
+                        nextSongTriggered = true; 
+                        const naechsteKarte = findeNaechsteKarte(clickedBtn);
+                        if (naechsteKarte) {
+                            const naechsterTitle = naechsteKarte.querySelector('.song-title-text').innerText;
+                            const naechsterArtistEl = naechsteKarte.querySelector('.song-artist-text');
+                            const naechsterArtist = naechsterArtistEl ? naechsterArtistEl.innerText : '';
+                            if (clickedBtn) {
+                                clickedBtn.innerText = '▶️';
+                                clickedBtn.classList.remove('playing');
+                            }
+                            window.playPreview(null, naechsterTitle, naechsterArtist, true, isCrossfadeDisabled, currentCrossfadeTime);
+                        }
+                    }
+                };
+
+            } catch (err) {
+                console.error("Fehler beim Lesen des Ordners:", err);
+            }
+        } else {
+            alert("Bitte verknüpfe zuerst einen Ordner!");
+            if (clickedBtn) clickedBtn.innerText = '▶️';
+            updateVisualPlayingState(null);
+            activePlayBtn = null;
+        }
+    };
+</script>
+
+<script>
+    // --- UI UND NAVIGATION LOGIK ---
+    const folderColors = ['var(--f-none)', 'var(--f-blue)', 'var(--f-red)', 'var(--f-green)', 'var(--f-gold)'];
+    let blocklistMasterSortable;
+    let currentUser = 'dj1'; 
+    let expandedBlockIds = new Set(); 
+    let currentDiffFilter = 'all'; 
+    let diffCollapsedState = { 'onlyMarc': false, 'onlyGunnar': false };
+
+    let userStates = {
+        'dj1': { isLocked: true, editMode: false, allCollapsed: true, cleanMode: false },
+        'dj2': { isLocked: true, editMode: false, allCollapsed: true, cleanMode: false },
+        'diff': { isLocked: true, editMode: false, allCollapsed: false }
+    };
+
+    window.addEventListener('click', function(e) {
+        const dropdown = document.getElementById('save-dropdown');
+        const saveBtn = document.getElementById('header-btn-save');
+        if (dropdown && dropdown.classList.contains('active')) {
+            if (!dropdown.contains(e.target) && !saveBtn.contains(e.target)) dropdown.classList.remove('active');
+        }
+    });
+
+    window.toggleDropdown = function() {
+        if (currentUser === 'diff') return;
+        const dropdown = document.getElementById('save-dropdown');
+        if (!dropdown.classList.contains('active')) {
+            if (typeof window.loadSavedTemplatesList === 'function') window.loadSavedTemplatesList(); 
+        }
+        dropdown.classList.toggle('active');
+    };
+
+    window.headerActionLeft = function() {
+        if (currentUser === 'diff') {
+            if(confirm("Als PDF exportieren?")) window.generatePDFExport();
+        } else {
+            userStates[currentUser].editMode = !userStates[currentUser].editMode;
+            window.applyUserStatesToUI();
+        }
+    };
+
+    window.headerActionRight = function() {
+        if (currentUser === 'diff') {
+            const marcSection = document.getElementById('onlyMarc');
+            const gunnarSection = document.getElementById('onlyGunnar');
+            let targetCollapse = false;
+            if (marcSection) targetCollapse = !marcSection.classList.contains('collapsed');
+            else if (gunnarSection) targetCollapse = !gunnarSection.classList.contains('collapsed');
+            ['onlyMarc', 'onlyGunnar'].forEach(id => {
+                const section = document.getElementById(id);
+                if (section) {
+                    const header = section.previousElementSibling;
+                    const icon = header.querySelector('.collapse-icon');
+                    if (targetCollapse) {
+                        section.classList.add('collapsed');
+                        if (icon) icon.style.transform = "rotate(-90deg)";
+                        diffCollapsedState[id] = true;
+                    } else {
+                        section.classList.remove('collapsed');
+                        if (icon) icon.style.transform = "rotate(0deg)";
+                        diffCollapsedState[id] = false;
+                    }
+                }
+            });
+        } else window.toggleAllBlocks();
+    };
+
+    window.toggleCleanMode = function() {
+        if (currentUser === 'diff') {
+            if (currentDiffFilter === 'all') currentDiffFilter = 'blocks';
+            else if (currentDiffFilter === 'blocks') currentDiffFilter = 'singles';
+            else currentDiffFilter = 'all';
+            window.applyUserStatesToUI();
+            if (window.renderCurrentState) window.renderCurrentState();
+            return; 
+        } 
+        userStates[currentUser].cleanMode = !userStates[currentUser].cleanMode;
+        const eyeBtn = document.getElementById('header-btn-eye');
+        if (userStates[currentUser].cleanMode) {
+            document.body.classList.add('clean-mode');
+            eyeBtn.style.background = "var(--accent-color)";
+            document.querySelectorAll('.block-item').forEach(block => block.classList.remove('collapsed'));
+        } else {
+            document.body.classList.remove('clean-mode');
+            eyeBtn.style.background = "#333";
+            if (window.renderCurrentState) window.renderCurrentState();
+        }
+    };
+
+    window.toggleLock = function() {
+        userStates[currentUser].isLocked = !userStates[currentUser].isLocked;
+        window.applyUserStatesToUI();
+        if (window.renderCurrentState) window.renderCurrentState();
+    };
+
+    window.applyUserStatesToUI = function() {
+        const state = userStates[currentUser];
+        const lockIcon = document.getElementById('lock-icon');
+        const header = document.querySelector('header');
+        const btnLeft = document.getElementById('header-btn-left');
+        const btnRight = document.getElementById('header-btn-right');
+        const btnEye = document.getElementById('header-btn-eye');
+        const btnSave = document.getElementById('header-btn-save');
+        const btnFolder = document.getElementById('btn-folder-select'); 
+        
+        document.body.classList.remove('user-dj1', 'user-dj2', 'user-diff');
+        document.body.classList.add(`user-${currentUser}`);
+
+        if (currentUser === 'diff') {
+            document.body.classList.remove('edit-mode', 'clean-mode'); 
+            btnEye.style.display = 'flex'; btnSave.style.display = 'none'; 
+            if (btnFolder) btnFolder.style.display = 'none'; 
+            btnLeft.innerText = "📄";
+            btnEye.style.background = currentDiffFilter !== 'all' ? "var(--accent-color)" : "#333";
+            if (currentDiffFilter === 'all') btnEye.innerText = "👁️";
+            else if (currentDiffFilter === 'blocks') btnEye.innerText = "📁";
+            else if (currentDiffFilter === 'singles') btnEye.innerText = "🎵";
+        } else {
+            btnEye.style.display = 'flex'; btnSave.style.display = 'flex'; 
+            if (btnFolder) btnFolder.style.display = 'flex'; 
+            btnEye.innerText = "👁️‍🗨️";
+            if (state.cleanMode) { document.body.classList.add('clean-mode'); btnEye.style.background = "var(--accent-color)"; }
+            else { document.body.classList.remove('clean-mode'); btnEye.style.background = "#333"; }
+            btnLeft.innerText = "✏️";
+            if (state.editMode) document.body.classList.add('edit-mode');
+            else document.body.classList.remove('edit-mode');
+        }
+
+        lockIcon.innerText = state.isLocked ? "🔒" : "🔓";
+        header.style.borderBottomColor = state.isLocked ? "var(--lock-color)" : "var(--accent-color)";
+        if (blocklistMasterSortable) blocklistMasterSortable.option("disabled", (currentUser === 'diff' || state.isLocked));
+        document.querySelectorAll('.block-sortable-list').forEach(el => {
+            const sortableInstance = Sortable.get(el);
+            if (sortableInstance) sortableInstance.option("disabled", (currentUser === 'diff' || state.isLocked));
+        });
+    };
+
+    function initBlocklistMasterSortable() {
+        const el = document.getElementById('blocklist-container');
+        if (blocklistMasterSortable) blocklistMasterSortable.destroy();
+        if (currentUser === 'diff') return;
+        blocklistMasterSortable = new Sortable(el, {
+            group: 'shared-list', animation: 150, handle: '.drag-handle, .song-details', ghostClass: 'sortable-ghost',
+            disabled: userStates[currentUser].isLocked, 
+            onEnd: () => window.saveData()
+        });
+    }
+
+    window.toggleAllBlocks = function() {
+        userStates[currentUser].allCollapsed = !userStates[currentUser].allCollapsed;
+        expandedBlockIds.clear(); 
+        document.querySelectorAll('.block-item').forEach(block => {
+            if (userStates[currentUser].allCollapsed) block.classList.add('collapsed');
+            else { block.classList.remove('collapsed'); expandedBlockIds.add(block.id); }
+        });
+    };
+
+    window.toggleSingleBlock = function(blockElement) {
+        if (userStates[currentUser].cleanMode) return; 
+        blockElement.classList.toggle('collapsed');
+        if (blockElement.classList.contains('collapsed')) expandedBlockIds.delete(blockElement.id);
+        else expandedBlockIds.add(blockElement.id);
+    };
+
+    window.toggleDiffSection = function(sectionId, headerEl) {
+        const contentDiv = document.getElementById(sectionId);
+        const iconEl = headerEl.querySelector('.collapse-icon');
+        if (contentDiv.classList.contains('collapsed')) { 
+            contentDiv.classList.remove('collapsed'); iconEl.style.transform = "rotate(0deg)"; diffCollapsedState[sectionId] = false; 
+        } else { 
+            contentDiv.classList.add('collapsed'); iconEl.style.transform = "rotate(-90deg)"; diffCollapsedState[sectionId] = true; 
+        }
+    };
+
+    window.renameBlockPrompt = function(blockElement) {
+        if (!userStates[currentUser].editMode) return; 
+        const titleEl = blockElement.querySelector('strong');
+        const countSpan = titleEl.querySelector('.block-song-count');
+        let currentTitle = titleEl.innerText;
+        if (countSpan) currentTitle = currentTitle.replace(countSpan.innerText, '').trim();
+        const newTitle = prompt("Neuer Name:", currentTitle);
+        if (newTitle) { titleEl.innerHTML = newTitle.trim() + (countSpan ? countSpan.outerHTML : ''); window.saveData(); }
+    };
+
+    window.editSongPrompt = function(detailsElement) {
+        if (!userStates[currentUser].editMode) return;
+        const titleEl = detailsElement.querySelector('.song-title-text');
+        const artistEl = detailsElement.querySelector('.song-artist-text');
+        const newTitle = prompt("Titel:", titleEl.innerText);
+        if (!newTitle) return;
+        const newArtist = prompt("Interpret:", artistEl ? artistEl.innerText : '');
+        titleEl.innerText = newTitle.trim();
+        if (newArtist) {
+            if (!artistEl) {
+                const span = document.createElement('span'); span.className = 'song-artist-text'; span.innerText = newArtist; detailsElement.appendChild(span);
+            } else artistEl.innerText = newArtist;
+        } else if (artistEl) artistEl.remove();
+        window.saveData();
+    };
+
+    window.addNewBlockPrompt = function() {
+        const name = prompt("Name:", "Neuer Block");
+        if(name) { 
+            const newId = 'blf-' + Math.random().toString(36).substr(2, 9);
+            window.addBlockToBlocklistUI(name, [], 0, newId); window.saveData(); 
+        }
+    };
+
+    window.deleteSongCard = function(btnElement) {
+        const card = btnElement.closest('.song-card');
+        const blockItem = card.closest('.block-item');
+        card.remove();
+        if (blockItem) {
+            const countSpan = blockItem.querySelector('.block-song-count');
+            const list = blockItem.querySelector('.block-sortable-list');
+            if (countSpan && list) countSpan.innerText = ` (${list.children.length})`;
+        }
+        window.saveData();
+    };
+
+    window.addSongToTopList = function() {
+        const input = document.getElementById('blocklistInputGlobal');
+        const val = input.value.trim();
+        if(!val) return;
+        const card = document.createElement('div'); card.className = 'song-card';
+        card.innerHTML = `
+            <div class="song-details" onclick="window.editSongPrompt(this)">
+                <span class="song-title-text">${val}</span>
+            </div>
+            <div class="crossfade-btn-group">
+                <span class="crossfade-toggle-btn">🔀</span>
+                <span class="crossfade-time-display">${DEFAULT_CROSSFADE}s</span>
+            </div>
+            <span class="play-preview-btn">▶️</span>
+            <span class="delete-btn" onclick="window.deleteSongCard(this)">×</span>`;
+        card.querySelector('.play-preview-btn').addEventListener('click', (e) => window.playPreview(e, val));
+        window.setupCrossfadeEvents(card);
+        document.getElementById('blocklist-container').prepend(card);
+        input.value = ""; window.saveData();
+    };
+
+    window.addBlockToBlocklistUI = function(title, songs, colorIdx, blockId) {
+        const listId = 'bll-' + Math.random().toString(36).substr(2, 9);
+        const div = document.createElement('div');
+        const isExpanded = userStates[currentUser].cleanMode || (!userStates[currentUser].allCollapsed) || expandedBlockIds.has(blockId);
+        div.className = `block-item ${isExpanded ? '' : 'collapsed'}`;
+        div.id = blockId; div.dataset.colorIndex = colorIdx; div.style.background = folderColors[colorIdx];
+        const songBorderColor = (currentUser === 'dj2') ? 'var(--dj2-color)' : 'rgba(255,255,255,0.05)';
+        div.innerHTML = `
+            <div class="block-header">
+                <span class="collapse-icon" onclick="window.toggleSingleBlock(this.closest('.block-item'))">▼</span>
+                <strong onclick="if(userStates[currentUser].editMode) { window.renameBlockPrompt(this.closest('.block-item')); } else { window.toggleSingleBlock(this.closest('.block-item')); }">${title}<span class="block-song-count"> (${songs.length})</span></strong>
+                <div style="display:flex; align-items:center; gap: 12px;" onclick="event.stopPropagation()">
+                    <div class="color-dot" style="width:18px; height:18px;" onclick="cycleColorGenericBlock('${blockId}')"></div>
+                    <span class="delete-btn" onclick="if(confirm('Löschen?')) { this.closest('.block-item').remove(); window.saveData(); }">✕</span>
+                    <span class="drag-handle">☰</span>
+                </div>
+            </div>
+            <div class="block-content"><div id="${listId}" class="block-sortable-list">
+                ${songs.map(s => {
+                    const sTitle = s.title || s; const sArtist = s.artist || ''; const sCf = s.cf !== undefined ? s.cf : DEFAULT_CROSSFADE;
+                    return `<div class="song-card" style="border-left: 3px solid ${songBorderColor};">
+                        <div class="song-details" onclick="window.editSongPrompt(this)"><span class="song-title-text">${sTitle}</span>${sArtist ? `<span class="song-artist-text">${sArtist}</span>` : ''}</div>
+                        <div class="crossfade-btn-group"><span class="crossfade-toggle-btn ${sCf===0?'disabled':''}">🔀</span><span class="crossfade-time-display">${sCf}s</span></div>
+                        <span class="play-preview-btn">▶️</span><span class="delete-btn" onclick="window.deleteSongCard(this)">×</span>
+                    </div>`;
+                }).join('')}
+            </div></div>`;
+        div.querySelectorAll('.song-card').forEach((card, idx) => {
+            const s = songs[idx]; const sTitle = s.title || s; const sArtist = s.artist || '';
+            card.querySelector('.play-preview-btn').addEventListener('click', (e) => window.playPreview(e, sTitle, sArtist));
+            window.setupCrossfadeEvents(card);
+        });
+        document.getElementById('blocklist-container').appendChild(div);
+        if (currentUser !== 'diff') {
+            new Sortable(document.getElementById(listId), { group: 'shared-list', animation: 150, disabled: userStates[currentUser].isLocked, onEnd: () => window.saveData() });
+        }
+    };
+
+    window.cycleColorGenericBlock = function(id) {
+        const el = document.getElementById(id);
+        let idx = (parseInt(el.dataset.colorIndex || 0) + 1) % folderColors.length;
+        el.dataset.colorIndex = idx; el.style.backgroundColor = folderColors[idx]; window.saveData();
+    };
+
+    window.switchUser = function(user) {
+        currentUser = user;
+        document.querySelectorAll('.footer-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById(`btn-user${user==='dj1'?1:user==='dj2'?2:'-diff'}`).classList.add('active');
+        const inputs = document.getElementById('ui-input-section'), addBtn = document.getElementById('ui-add-block-btn'), info = document.getElementById('takeover-infozone');
+        if (user === 'diff') { inputs.style.display = 'none'; addBtn.style.display = 'none'; info.style.display = 'block'; } 
+        else { inputs.style.display = 'flex'; addBtn.style.display = 'block'; info.style.display = 'none'; }
+        document.getElementById('blocklist-container').innerHTML = 'Lade Daten...';
+        window.applyUserStatesToUI();
+        if (window.renderCurrentState) window.renderCurrentState();
+    }
+</script>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = { apiKey: "AIzaSyDCZXd7ghAG7CbAwlushzifcCznLslLack", authDomain: "mymojoblox.firebaseapp.com", projectId: "mymojoblox", storageBucket: "mymojoblox.firebasestorage.app", messagingSenderId: "191559552869", appId: "1:191559552869:web:0f212fc5f6fb7338621b8c" };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    let dataDJ1 = { blocklist: [] }, dataDJ2 = { blocklist: [] };
+
+    window.saveData = async () => {
+        if (currentUser === 'diff') return;
+        const container = document.getElementById('blocklist-container');
+        if(!container || container.innerText.includes('Lade Daten')) return;
+        const data = window.buildCurrentData();
+        try { await setDoc(doc(db, "mojoblox", currentUser==='dj1'?"set1_dj1":"set1_dj2"), data); } catch (e) { console.error(e); }
+    }
+
+    window.buildCurrentData = () => {
+        const container = document.getElementById('blocklist-container'), data = { blocklist: [], timestamp: Date.now() };
+        container.childNodes.forEach(node => {
+            if(node.nodeType !== 1) return;
+            if(node.classList.contains('block-item')) {
+                const list = node.querySelector('.block-sortable-list');
+                const songs = Array.from(list.querySelectorAll('.song-card')).map(card => {
+                    const isOff = card.querySelector('.crossfade-toggle-btn').classList.contains('disabled');
+                    return { title: card.querySelector('.song-title-text').innerText, artist: card.querySelector('.song-artist-text')?.innerText || '', cf: isOff?0:parseInt(card.querySelector('.crossfade-time-display').innerText) };
+                });
+                let t = node.querySelector('strong').innerText; const c = node.querySelector('.block-song-count'); if(c) t = t.replace(c.innerText, '').trim();
+                data.blocklist.push({ type: 'block', id: node.id, t: t, s: songs, cIdx: node.dataset.colorIndex || 0 });
+            } else if(node.classList.contains('song-card')) {
+                const isOff = node.querySelector('.crossfade-toggle-btn').classList.contains('disabled');
+                data.blocklist.push({ type: 'single', title: node.querySelector('.song-title-text').innerText, artist: node.querySelector('.song-artist-text')?.innerText || '', cf: isOff?0:parseInt(node.querySelector('.crossfade-time-display').innerText) });
+            }
+        });
+        return data;
+    }
+
+    window.saveCurrentAsTemplate = async () => {
+        const name = prompt("Name:"); if (!name) return;
+        const data = window.buildCurrentData(); data.templateName = name; data.owner = currentUser;
+        try { await setDoc(doc(db, "mojoblox_templates", `${currentUser}_template_${Date.now()}`), data); alert("Gespeichert!"); } catch (e) { console.error(e); }
+    }
+
+    window.loadSavedTemplatesList = async () => {
+        const c = document.getElementById('saved-lists-container'); c.innerHTML = '<div class="dropdown-item">Lade...</div>';
+        const q = query(collection(db, "mojoblox_templates"), where("owner", "==", currentUser));
+        const snap = await getDocs(q); c.innerHTML = '';
+        snap.forEach(d => {
+            const div = document.createElement('div'); div.className = 'dropdown-item';
+            div.innerHTML = `<span onclick="window.loadTemplateToCurrent('${d.id}')">📂 ${d.data().templateName}</span><span class="delete-saved" onclick="window.deleteTemplate(event, '${d.id}', '${d.data().templateName}')">✕</span>`;
+            c.appendChild(div);
+        });
+    }
+
+    window.loadTemplateToCurrent = async (id) => {
+        if (!confirm("Überschreiben?")) return;
+        const d = await getDoc(doc(db, "mojoblox_templates", id));
+        if (d.exists()) {
+            await setDoc(doc(db, "mojoblox", currentUser==='dj1'?"set1_dj1":"set1_dj2"), { blocklist: d.data().blocklist, timestamp: Date.now() });
+            document.getElementById('save-dropdown').classList.remove('active');
+        }
+    }
+
+    window.deleteTemplate = async (e, id, n) => { e.stopPropagation(); if (confirm(`Löschen: ${n}?`)) { await deleteDoc(doc(db, "mojoblox_templates", id)); window.loadSavedTemplatesList(); } }
+
+    function extractAllSongsWithMetadata(bl) {
+        let s = []; if (!bl) return s;
+        bl.forEach(i => {
+            if (i.type==='block'&&i.s) i.s.forEach(so => s.push({title: so.title||so, artist: so.artist||'', parentType:'block'}));
+            if (i.type==='single'&&i.title) s.push({title: i.title, artist: i.artist||'', parentType:'single'});
+        });
+        return s;
+    }
+
+    window.executeQuickAdd = async (t, a, owner) => {
+        const target = owner==='dj1'?'dj2':'dj1'; const ref = doc(db, "mojoblox", target==='dj1'?"set1_dj1":"set1_dj2");
+        const snap = await getDoc(ref); let data = snap.exists()?snap.data():{blocklist:[]};
+        data.blocklist.push({type:'single', title:t, artist:a||'', cf:DEFAULT_CROSSFADE}); data.timestamp = Date.now();
+        await setDoc(ref, data);
+    };
+
+    window.renderCurrentState = () => {
+        const b = document.getElementById('blocklist-container');
+        const s1 = extractAllSongsWithMetadata(dataDJ1.blocklist), s2 = extractAllSongsWithMetadata(dataDJ2.blocklist);
+        const safe = s1.filter(so => s2.some(so2 => so2.title.toLowerCase().trim() === so.title.toLowerCase().trim()));
+        document.getElementById('cnt-dj1').innerText = `${s1.length} Songs`;
+        document.getElementById('cnt-dj2').innerText = `${s2.length} Songs`;
+        if (currentUser === 'diff') {
+            b.innerHTML = ''; const o1 = s1.filter(so => !s2.some(so2 => so2.title.toLowerCase().trim() === so.title.toLowerCase().trim())), o2 = s2.filter(so => !s1.some(so1 => so1.title.toLowerCase().trim() === so.title.toLowerCase().trim()));
+            const render = (so, ow) => {
+                if ((currentDiffFilter==='blocks'&&so.parentType!=='block')||(currentDiffFilter==='singles'&&so.parentType!=='single')) return '';
+                return `<div class="song-card" style="border-left:3px solid ${ow==='dj1'?'var(--accent-color)':'var(--dj2-color)'}"><div class="song-details"><span class="song-title-text">${so.title}</span>${so.artist?`<span class="song-artist-text">${so.artist}</span>`:''}</div><div style="display:flex;align-items:center;gap:10px;margin-left:auto;"><span class="song-type-icon">${so.parentType==='block'?'📁':'🎵'}</span>${!userStates['diff'].isLocked?`<button class="diff-takeover-btn" onclick="window.executeQuickAdd('${so.title.replace(/'/g,"\\'")}', '${so.artist?so.artist.replace(/'/g,"\\'"):''}', '${ow}')">+</button>`:''}</div></div>`;
+            };
+            let h1 = '', h2 = ''; o1.forEach(so => h1 += render(so,'dj1')); o2.forEach(so => h2 += render(so,'dj2'));
+            if(h1) b.innerHTML += `<div class="diff-section-header" onclick="window.toggleDiffSection('onlyMarc', this)"><span class="collapse-icon" style="transform:${diffCollapsedState['onlyMarc']?'rotate(-90deg)':'rotate(0deg)'}">▼</span><span>Nur Marc:</span></div><div id="onlyMarc" class="diff-section-content ${diffCollapsedState['onlyMarc']?'collapsed':''}">${h1}</div>`;
+            if(h2) b.innerHTML += `<div class="diff-section-header" onclick="window.toggleDiffSection('onlyGunnar', this)"><span class="collapse-icon" style="transform:${diffCollapsedState['onlyGunnar']?'rotate(-90deg)':'rotate(0deg)'}">▼</span><span>Nur Gunnar:</span></div><div id="onlyGunnar" class="diff-section-content ${diffCollapsedState['onlyGunnar']?'collapsed':''}">${h2}</div>`;
+            return;
+        }
+        const active = currentUser==='dj1'?dataDJ1:dataDJ2; b.innerHTML = '';
+        if(!active.blocklist||active.blocklist.length===0) { b.innerHTML = '<p style="text-align:center;opacity:0.5;">Leer.</p>'; return; }
+        active.blocklist.forEach(i => {
+            if(i.type==='block') window.addBlockToBlocklistUI(i.t, i.s, i.cIdx||0, i.id||'blf-'+Math.random().toString(36).substr(2,9));
+            else {
+                const card = document.createElement('div'); card.className = 'song-card'; const cf = i.cf!==undefined?i.cf:DEFAULT_CROSSFADE;
+                card.innerHTML = `<div class="song-details" onclick="window.editSongPrompt(this)"><span class="song-title-text">${i.title}</span>${i.artist?`<span class="song-artist-text">${i.artist}</span>`:''}</div><div class="crossfade-btn-group"><span class="crossfade-toggle-btn ${cf===0?'disabled':''}">🔀</span><span class="crossfade-time-display">${cf}s</span></div><span class="play-preview-btn">▶️</span><span class="delete-btn" onclick="window.deleteSongCard(this)">×</span>`;
+                card.querySelector('.play-preview-btn').addEventListener('click', (e) => window.playPreview(e, i.title, i.artist||''));
+                window.setupCrossfadeEvents(card); b.appendChild(card);
+            }
+        });
+        document.querySelectorAll('.song-title-text').forEach(el => {
+            if(safe.some(s => s.title.toLowerCase().trim() === el.innerText.trim().toLowerCase())) {
+                const card = el.closest('.song-card'); card.classList.add('match-found');
+                if(!card.querySelector('.safe-tag')) { const tag = document.createElement('span'); tag.className = 'safe-tag'; tag.innerText = 'Safe ★'; el.after(tag); }
+            }
+        });
+        initBlocklistMasterSortable();
+    };
+
+    onSnapshot(doc(db, "mojoblox", "set1_dj1"), (s) => { if(s.exists()) { dataDJ1 = s.data(); window.renderCurrentState(); } });
+    onSnapshot(doc(db, "mojoblox", "set1_dj2"), (s) => { if(s.exists()) { dataDJ2 = s.data(); window.renderCurrentState(); } });
+</script>
+
+</body>
+</html>
