@@ -1500,107 +1500,171 @@ function renderBlocks() {
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    import { onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const firebaseConfig = { 
-        apiKey: "AIzaSyDCZXd7ghAG7CbAwlushzifcCznLslLack", authDomain: "mymojoblox.firebaseapp.com", 
-        projectId: "mymojoblox", storageBucket: "mymojoblox.firebasestorage.app", 
-        messagingSenderId: "191559552869", appId: "1:191559552869:web:0f212fc5f6fb7338621b8c" 
+        apiKey: "AIzaSyDCZXd7ghAG7CbAwlushzifcCznLslLack", 
+        authDomain: "mymojoblox.firebaseapp.com", 
+        projectId: "mymojoblox", 
+        storageBucket: "mymojoblox.firebasestorage.app", 
+        messagingSenderId: "191559552869", 
+        appId: "1:191559552869:web:0f212fc5f6fb7338621b8c" 
     };
     
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    let dataDJ1 = { blocklist: [] };
-    let dataDJ2 = { blocklist: [] };
+    // Interne Speicher für die getrennten Datenströme
+    let dataDJ1 = [];
+    let dataDJ2 = [];
+
+    // --- 1. ECHTZEIT-SYNC MIT DUBLETTEN-FILTER ---
+
+    function renderCombinedUI() {
+        const bContainer = document.getElementById('blocklist-container');
+        if (!bContainer || bContainer.innerText.includes('Lade Daten')) return;
+
+        bContainer.innerHTML = ''; 
+        const renderedIds = new Set();
+
+        // Beide Listen zusammenführen
+        const combined = [...dataDJ1, ...dataDJ2];
+
+        combined.forEach((item) => {
+            // Eindeutige ID für Blöcke oder Key für Einzelsongs
+            const uniqueId = item.id || `single-${item.title}-${item.artist}`;
+            
+            // Wenn ID schon gezeichnet -> überspringen (KILLT DUBLETTEN)
+            if (renderedIds.has(uniqueId)) return;
+            renderedIds.add(uniqueId);
+
+            if (item.type === 'block') {
+                window.addBlockToBlocklistUI(item.t, item.s, item.cIdx || 0, item.id, item.createdBy);
+            } else if (item.type === 'single') {
+                // Falls du Einzelsongs-Logik brauchst, hier einfügen
+                // Aktuell fokussieren wir uns auf die Blöcke
+            }
+        });
+    }
+
+    // Lauschen auf Marc
+    onSnapshot(doc(db, "mojoblox", "set1_dj1"), (docSnap) => {
+        if (docSnap.exists()) {
+            dataDJ1 = docSnap.data().blocklist || [];
+            renderCombinedUI();
+        }
+    });
+
+    // Lauschen auf Gunnar
+    onSnapshot(doc(db, "mojoblox", "set1_dj2"), (docSnap) => {
+        if (docSnap.exists()) {
+            dataDJ2 = docSnap.data().blocklist || [];
+            renderCombinedUI();
+        }
+    });
+
+    // --- 2. SAVE DATA (GEFILTERT) ---
 
     window.saveData = async () => {
         if (currentUser === 'diff') return;
         const container = document.getElementById('blocklist-container');
         if(!container || container.innerText.includes('Lade Daten')) return;
         
-        const data = window.buildCurrentData();
+        const fullData = window.buildCurrentData();
+        
+        // NUR EIGENE BLÖCKE SPEICHERN
+        const filteredBlocklist = fullData.blocklist.filter(item => {
+            if (item.type === 'block') {
+                return item.createdBy === currentUser;
+            }
+            return true; 
+        });
+
         const docName = currentUser === 'dj1' ? "set1_dj1" : "set1_dj2";
-        try { await setDoc(doc(db, "mojoblox", docName), data); } catch (e) { console.error(e); }
-    }
+        
+        try { 
+            await setDoc(doc(db, "mojoblox", docName), {
+                blocklist: filteredBlocklist,
+                timestamp: Date.now()
+            }); 
+            console.log(`Daten für ${currentUser} synchronisiert.`);
+        } catch (e) { console.error("Fehler:", e); }
+    };
+
+    // --- 3. BUILD DATA (MIT OWNER-ERKENNUNG) ---
 
     window.buildCurrentData = () => {
-    const container = document.getElementById('blocklist-container');
-    const data = { blocklist: [], timestamp: Date.now() };
-    
-    container.childNodes.forEach(node => {
-        if(node.nodeType !== 1) return;
+        const container = document.getElementById('blocklist-container');
+        const data = { blocklist: [], timestamp: Date.now() };
         
-        if(node.classList.contains('block-item')) {
-            // --- NEU: Besitzer aus der Klasse auslesen ---
-            let owner = 'dj1'; // Standard
-            if (node.classList.contains('owner-gunnar')) owner = 'dj2';
-            // ---------------------------------------------
+        container.childNodes.forEach(node => {
+            if(node.nodeType !== 1) return;
+            
+            if(node.classList.contains('block-item')) {
+                // Wer ist der Besitzer laut CSS Klasse?
+                let owner = node.classList.contains('owner-gunnar') ? 'dj2' : 'dj1';
 
-            const list = node.querySelector('.block-sortable-list');
-            const songObjects = Array.from(list.querySelectorAll('.song-card')).map(card => {
-                const details = card.querySelector('.song-details');
-                const isOff = card.querySelector('.crossfade-toggle-btn').classList.contains('disabled');
-                const cfTime = isOff ? 0 : (parseInt(card.querySelector('.crossfade-time-display').innerText) || DEFAULT_CROSSFADE);
-                return { 
-                    title: details.querySelector('.song-title-text').innerText, 
-                    artist: details.querySelector('.song-artist-text') ? details.querySelector('.song-artist-text').innerText : '',
+                const list = node.querySelector('.block-sortable-list');
+                const songObjects = Array.from(list.querySelectorAll('.song-card')).map(card => {
+                    const details = card.querySelector('.song-details');
+                    const isOff = card.querySelector('.crossfade-toggle-btn').classList.contains('disabled');
+                    const cfTime = isOff ? 0 : (parseInt(card.querySelector('.crossfade-time-display').innerText) || 5);
+                    return { 
+                        title: details.querySelector('.song-title-text').innerText, 
+                        artist: details.querySelector('.song-artist-text')?.innerText || '',
+                        cf: cfTime
+                    };
+                });
+
+                const titleEl = node.querySelector('strong');
+                let rawTitle = titleEl.innerText;
+                const countSpan = titleEl.querySelector('.block-song-count');
+                if (countSpan) rawTitle = rawTitle.replace(countSpan.innerText, '').trim();
+
+                data.blocklist.push({ 
+                    type: 'block', 
+                    id: node.id, 
+                    t: rawTitle, 
+                    s: songObjects, 
+                    cIdx: node.dataset.colorIndex || 0,
+                    createdBy: owner 
+                });
+
+            } else if(node.classList.contains('song-card')) {
+                const details = node.querySelector('.song-details');
+                const isOff = node.querySelector('.crossfade-toggle-btn').classList.contains('disabled');
+                const cfTime = isOff ? 0 : (parseInt(node.querySelector('.crossfade-time-display').innerText) || 5);
+                data.blocklist.push({ 
+                    type: 'single', 
+                    title: details.querySelector('.song-title-text').innerText,
+                    artist: details.querySelector('.song-artist-text')?.innerText || '',
                     cf: cfTime
-                };
-            });
+                });
+            }
+        });
+        return data;
+    };
 
-            const titleEl = node.querySelector('strong');
-            let rawTitle = titleEl.innerText;
-            const countSpan = titleEl.querySelector('.block-song-count');
-            if (countSpan) rawTitle = rawTitle.replace(countSpan.innerText, '').trim();
-
-            // Hier fügen wir 'owner' zum gespeicherten Objekt hinzu
-            data.blocklist.push({ 
-                type: 'block', 
-                id: node.id, 
-                t: rawTitle, 
-                s: songObjects, 
-                cIdx: node.dataset.colorIndex || 0,
-                createdBy: owner // Speichert den DJ für das nächste Laden
-            });
-
-        } else if(node.classList.contains('song-card')) {
-            // (Logik für einzelne Songs bleibt gleich...)
-            const details = node.querySelector('.song-details');
-            const isOff = node.querySelector('.crossfade-toggle-btn').classList.contains('disabled');
-            const cfTime = isOff ? 0 : (parseInt(node.querySelector('.crossfade-time-display').innerText) || DEFAULT_CROSSFADE);
-            data.blocklist.push({ 
-                type: 'single', 
-                title: details.querySelector('.song-title-text').innerText,
-                artist: details.querySelector('.song-artist-text') ? details.querySelector('.song-artist-text').innerText : '',
-                cf: cfTime
-            });
-        }
-    });
-    return data;
-}
+    // --- 4. TEMPLATES & VORLAGEN ---
 
     window.saveCurrentAsTemplate = async () => {
-        const templateName = prompt("Gib einen Namen für das Set ein (z.B. 'Zeltfest 2026'):");
-        if (!templateName || templateName.trim() === '') return;
+        const templateName = prompt("Name für dieses Set:");
+        if (!templateName?.trim()) return;
 
         const data = window.buildCurrentData();
         data.templateName = templateName.trim();
         data.owner = currentUser; 
 
-        const docId = `${currentUser}_template_${Date.now()}`;
         try {
-            await setDoc(doc(db, "mojoblox_templates", docId), data);
-            alert("Set erfolgreich gespeichert!");
-            document.getElementById('save-dropdown').classList.remove('active');
+            await setDoc(doc(db, "mojoblox_templates", `${currentUser}_${Date.now()}`), data);
+            alert("Vorlage gespeichert!");
         } catch (e) { console.error(e); }
-    }
+    };
 
     window.loadSavedTemplatesList = async () => {
         const container = document.getElementById('saved-lists-container');
         if (!container) return;
-        container.innerHTML = '<div class="dropdown-item">Lade...</div>';
+        container.innerHTML = 'Lade...';
         
         try {
             const q = query(collection(db, "mojoblox_templates"), where("owner", "==", currentUser));
@@ -1608,45 +1672,38 @@ function renderBlocks() {
             container.innerHTML = '';
 
             if (querySnapshot.empty) {
-                container.innerHTML = '<div class="dropdown-item" style="opacity:0.5;">Keine Vorlagen</div>';
+                container.innerHTML = '<div class="dropdown-item">Keine Vorlagen</div>';
                 return;
             }
 
             querySnapshot.forEach((docSnap) => {
-                const templateData = docSnap.data();
+                const td = docSnap.data();
                 const div = document.createElement('div');
                 div.className = 'dropdown-item';
                 div.innerHTML = `
-                    <span onclick="window.loadTemplateToCurrent('${docSnap.id}')">📂 ${templateData.templateName}</span>
-                    <span class="delete-saved" onclick="window.deleteTemplate(event, '${docSnap.id}', '${templateData.templateName}')">✕</span>
+                    <span onclick="window.loadTemplateToCurrent('${docSnap.id}')">📂 ${td.templateName}</span>
+                    <span class="delete-saved" onclick="window.deleteTemplate(event, '${docSnap.id}')">✕</span>
                 `;
                 container.appendChild(div);
             });
         } catch (e) { console.error(e); }
-    }
+    };
 
     window.loadTemplateToCurrent = async (docId) => {
-        if (!confirm("Möchtest du dieses Set wirklich laden? Dein aktuelles Live-Set wird dabei überschrieben!")) return;
-        
+        if (!confirm("Aktuelles Live-Set mit dieser Vorlage überschreiben?")) return;
         try {
-            const docRef = doc(db, "mojoblox_templates", docId);
-            const docSnap = await getDoc(docRef);
-            
+            const docSnap = await getDoc(doc(db, "mojoblox_templates", docId));
             if (docSnap.exists()) {
-                const templateData = docSnap.data();
                 const targetDoc = currentUser === 'dj1' ? "set1_dj1" : "set1_dj2";
-                
                 await setDoc(doc(db, "mojoblox", targetDoc), {
-                    blocklist: templateData.blocklist,
+                    blocklist: docSnap.data().blocklist,
                     timestamp: Date.now()
                 });
-                
-                document.getElementById('save-dropdown').classList.remove('active');
-                alert("Set geladen!");
+                alert("Vorlage geladen!");
             }
         } catch (e) { console.error(e); }
-    }
-
+    };
+</script>
     window.deleteTemplate = async (event, docId, name) => {
         event.stopPropagation(); 
         if (!confirm(`Möchtest du das gespeicherte Set "${name}" wirklich löschen?`)) return;
@@ -1811,18 +1868,29 @@ function renderBlocks() {
         if (!activeData || !activeData.blocklist || activeData.blocklist.length === 0) { bContainer.innerHTML = '<p style="text-align:center; opacity:0.5;">Noch keine Einträge.</p>'; return; }
 
         bContainer.innerHTML = ''; 
+
+// Ein Set, um Dubletten während des Ladevorgangs zu verhindern
+const renderedIds = new Set();
+
 activeData.blocklist.forEach((item) => {
     if (item.type === 'block') {
+        // ID sicherstellen
         if (!item.id) item.id = 'blf-' + Math.random().toString(36).substr(2, 9);
         
-        // NEU: item.createdBy als 5. Parameter übergeben
+        // PRÜFUNG: Wenn diese ID schon geladen wurde, überspringen wir diesen Eintrag
+        if (renderedIds.has(item.id)) return;
+        renderedIds.add(item.id);
+        
+        // Block zeichnen (mit Übergabe des Erstellers für die richtige Spalte)
         window.addBlockToBlocklistUI(item.t, item.s, item.cIdx || 0, item.id, item.createdBy);
         
     } else if (item.type === 'single') {
+        // Bei Einzelsongs nutzen wir Titel+Interpret als eindeutigen Schlüssel
+        const songKey = `single-${item.title}-${item.artist || ''}`;
+        if (renderedIds.has(songKey)) return;
+        renderedIds.add(songKey);
+
         const songCard = document.createElement('div'); 
-        
-        // OPTIONAL: Auch Einzelsongs könnten farblich markiert werden
-        // Hier lassen wir es erstmal neutral wie in deinem Original
         songCard.className = 'song-card';
         
         const cfTime = item.cf !== undefined ? item.cf : DEFAULT_CROSSFADE;
