@@ -1529,24 +1529,37 @@ function renderBlocks() {
     bContainer.innerHTML = ''; 
     const renderedIds = new Set();
 
-    // --- ÄNDERUNG HIER: Fallback auf leeres Array ---
     const list1 = Array.isArray(dataDJ1) ? dataDJ1 : [];
     const list2 = Array.isArray(dataDJ2) ? dataDJ2 : [];
-    
     const combined = [...list1, ...list2];
-    // -----------------------------------------------
 
     combined.forEach((item) => {
-        // Falls ein Item fehlerhaft ist, überspringen
         if (!item) return;
 
-        const uniqueId = item.id || `single-${item.title}-${item.artist}`;
+        // Erstelle einen "Fingerabdruck" des Inhalts zum Vergleichen
+        // Wir trimmen Leerzeichen und machen alles kleingeschrieben
+        let fingerprint;
+        if (item.type === 'block') {
+            fingerprint = item.id; // Blöcke vergleichen wir nach ihrer ID
+        } else {
+            // Einzelsongs vergleichen wir nach Inhalt
+            const t = (item.title || "").toLowerCase().trim();
+            const a = (item.artist || "").toLowerCase().trim();
+            fingerprint = `song-${t}-${a}`;
+        }
+
+        // Dubletten-Check
+        if (renderedIds.has(fingerprint)) {
+            console.log("Dublette ignoriert:", fingerprint);
+            return;
+        }
         
-        if (renderedIds.has(uniqueId)) return;
-        renderedIds.add(uniqueId);
+        renderedIds.add(fingerprint);
 
         if (item.type === 'block') {
             window.addBlockToBlocklistUI(item.t, item.s, item.cIdx || 0, item.id, item.createdBy);
+        } else if (item.type === 'single') {
+            // Hier falls nötig: window.addSingleSongToUI(item);
         }
     });
 }
