@@ -1523,31 +1523,33 @@ function renderBlocks() {
     // --- 1. ECHTZEIT-SYNC MIT DUBLETTEN-FILTER ---
 
     function renderCombinedUI() {
-        const bContainer = document.getElementById('blocklist-container');
-        if (!bContainer || bContainer.innerText.includes('Lade Daten')) return;
+    const bContainer = document.getElementById('blocklist-container');
+    if (!bContainer || bContainer.innerText.includes('Lade Daten')) return;
 
-        bContainer.innerHTML = ''; 
-        const renderedIds = new Set();
+    bContainer.innerHTML = ''; 
+    const renderedIds = new Set();
 
-        // Beide Listen zusammenführen
-        const combined = [...dataDJ1, ...dataDJ2];
+    // --- ÄNDERUNG HIER: Fallback auf leeres Array ---
+    const list1 = Array.isArray(dataDJ1) ? dataDJ1 : [];
+    const list2 = Array.isArray(dataDJ2) ? dataDJ2 : [];
+    
+    const combined = [...list1, ...list2];
+    // -----------------------------------------------
 
-        combined.forEach((item) => {
-            // Eindeutige ID für Blöcke oder Key für Einzelsongs
-            const uniqueId = item.id || `single-${item.title}-${item.artist}`;
-            
-            // Wenn ID schon gezeichnet -> überspringen (KILLT DUBLETTEN)
-            if (renderedIds.has(uniqueId)) return;
-            renderedIds.add(uniqueId);
+    combined.forEach((item) => {
+        // Falls ein Item fehlerhaft ist, überspringen
+        if (!item) return;
 
-            if (item.type === 'block') {
-                window.addBlockToBlocklistUI(item.t, item.s, item.cIdx || 0, item.id, item.createdBy);
-            } else if (item.type === 'single') {
-                // Falls du Einzelsongs-Logik brauchst, hier einfügen
-                // Aktuell fokussieren wir uns auf die Blöcke
-            }
-        });
-    }
+        const uniqueId = item.id || `single-${item.title}-${item.artist}`;
+        
+        if (renderedIds.has(uniqueId)) return;
+        renderedIds.add(uniqueId);
+
+        if (item.type === 'block') {
+            window.addBlockToBlocklistUI(item.t, item.s, item.cIdx || 0, item.id, item.createdBy);
+        }
+    });
+}
 
     // Lauschen auf Marc
     onSnapshot(doc(db, "mojoblox", "set1_dj1"), (docSnap) => {
