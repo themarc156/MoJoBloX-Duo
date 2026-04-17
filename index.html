@@ -1235,21 +1235,37 @@ function renderBlocks() {
     };
 
     function initBlocklistMasterSortable() {
-        const el = document.getElementById('blocklist-container');
-        if (blocklistMasterSortable) blocklistMasterSortable.destroy();
-        if (currentUser === 'diff') return;
+    const el = document.getElementById('blocklist-container');
+    if (blocklistMasterSortable) blocklistMasterSortable.destroy();
+    
+    // Nur DJ1 und DJ2 dürfen sortieren, 'diff' (Zuschauer) nicht
+    if (currentUser === 'diff') return;
 
-        blocklistMasterSortable = new Sortable(el, {
-            group: 'shared-list', animation: 150, handle: '.drag-handle, .song-details', ghostClass: 'sortable-ghost',
-            disabled: userStates[currentUser].isLocked, 
-            onEnd: () => window.saveData(),
-            onMove: function (evt) {
-                const isBlock = evt.dragged.classList.contains('block-item');
-                const targetIsNested = evt.to.classList.contains('block-sortable-list');
-                if (isBlock && targetIsNested) return false;
+    blocklistMasterSortable = new Sortable(el, {
+        group: 'shared-list', 
+        animation: 150, 
+        handle: '.drag-handle, .song-details', 
+        ghostClass: 'sortable-ghost',
+        disabled: userStates[currentUser].isLocked, 
+        onEnd: () => {
+            window.saveData(); // Speichert die neue Reihenfolge für alle
+        },
+        onMove: function (evt) {
+            // Prüfen: Was wird gerade gezogen?
+            const isDraggingBlock = evt.dragged.classList.contains('block-item');
+            // Prüfen: Wohin soll es geschoben werden? (In die Liste eines anderen Blocks?)
+            const isTargetNestedList = evt.to.classList.contains('block-sortable-list');
+
+            // Regel: Ein ganzer Block darf NIEMALS in die Songliste eines anderen Blocks geschoben werden.
+            if (isDraggingBlock && isTargetNestedList) {
+                return false;
             }
-        });
-    }
+            
+            // Einzelsongs dürfen überall hin (zwischen Blöcke oder in Blöcke hinein),
+            // außer du willst auch das verhindern. Standardmäßig ist dies nun erlaubt.
+        }
+    });
+}
 
     window.toggleAllBlocks = function() {
         userStates[currentUser].allCollapsed = !userStates[currentUser].allCollapsed;
@@ -1536,14 +1552,11 @@ function renderBlocks() {
     combined.forEach((item) => {
         if (!item) return;
 
-        // 1. Identifikator für das Element (Block oder Single)
-        let elementKey = item.id || `single-${item.t}-${item.artist}`;
+        let elementKey = item.id || `single-${item.t || item.title}-${item.a || item.artist}`;
         if (renderedFingerprints.has(elementKey)) return;
         renderedFingerprints.add(elementKey);
 
         if (item.type === 'block' && Array.isArray(item.s)) {
-            // --- NEU: INNERER FILTER ---
-            // Wir filtern den Inhalt des Blocks, bevor wir ihn zeichnen
             const seenInBlock = new Set();
             const cleanSongs = item.s.filter(song => {
                 const songKey = `${(song.title || song.t || "").toLowerCase()}-${(song.artist || song.a || "").toLowerCase()}`.replace(/\s+/g, '');
@@ -1552,11 +1565,30 @@ function renderBlocks() {
                 return true;
             });
 
-            // Wir zeichnen den Block nur mit den gesäuberten Songs
             window.addBlockToBlocklistUI(item.t, cleanSongs, item.cIdx || 0, item.id, item.createdBy);
             
         } else if (item.type === 'single') {
-            // Einzelsong Logik...
+            // --- NEU: LOGIK FÜR EINZELSONGS ---
+            const singleEl = document.createElement('div');
+            // 'block-item' ist wichtig für Sortable!
+            singleEl.className = 'block-item single-song-card'; 
+            singleEl.setAttribute('data-id', item.id);
+            
+            // Wir bauen das HTML so, dass es ein Handle hat und wie eine kompakte Karte aussieht
+            singleEl.innerHTML = `
+                <div class="block-header" style="display: flex; align-items: center; gap: 10px; padding: 10px; background: #2a2a2a; border-radius: 8px; border-left: 4px solid #ffcc00;">
+                    <div class="drag-handle" style="cursor: grab;">☰</div>
+                    <div style="flex-grow: 1;">
+                        <span style="font-weight: bold;">${item.t || item.title}</span><br>
+                        <small style="opacity: 0.7;">${item.a || item.artist || 'Unbekannt'}</small>
+                    </div>
+                    <div class="block-actions">
+                        <button onclick="window.playPreview(event, '${item.t || item.title}', '${item.a || item.artist || ''}')" class="btn-sm">▶️</button>
+                        <button onclick="deleteItem('${item.id}')" class="btn-sm">❌</button>
+                    </div>
+                </div>
+            `;
+            bContainer.appendChild(singleEl);
         }
     });
 }
