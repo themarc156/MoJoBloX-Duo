@@ -1527,7 +1527,7 @@ function renderBlocks() {
     if (!bContainer || bContainer.innerText.includes('Lade Daten')) return;
 
     bContainer.innerHTML = ''; 
-    const renderedIds = new Set();
+    const renderedFingerprints = new Set(); // Wir speichern hier "Inhalts-Fingerabdrücke"
 
     const list1 = Array.isArray(dataDJ1) ? dataDJ1 : [];
     const list2 = Array.isArray(dataDJ2) ? dataDJ2 : [];
@@ -1536,30 +1536,38 @@ function renderBlocks() {
     combined.forEach((item) => {
         if (!item) return;
 
-        // Erstelle einen "Fingerabdruck" des Inhalts zum Vergleichen
-        // Wir trimmen Leerzeichen und machen alles kleingeschrieben
-        let fingerprint;
-        if (item.type === 'block') {
-            fingerprint = item.id; // Blöcke vergleichen wir nach ihrer ID
-        } else {
-            // Einzelsongs vergleichen wir nach Inhalt
-            const t = (item.title || "").toLowerCase().trim();
-            const a = (item.artist || "").toLowerCase().trim();
+        // FINGERABDRUCK ERSTELLEN
+        // Wir nehmen den Titel und Artist, machen alles klein und löschen Leerzeichen
+        let fingerprint = "";
+        
+        if (item.type === 'block' && item.s && item.s.length > 0) {
+            // Für Blöcke nehmen wir den Inhalt des ersten Songs im Block als Identifikator
+            const firstSong = item.s[0];
+            const t = (firstSong.t || "").toLowerCase().replace(/\s+/g, '');
+            const a = (firstSong.a || "").toLowerCase().replace(/\s+/g, '');
+            fingerprint = `block-${t}-${a}`;
+        } else if (item.type === 'single' || item.title) {
+            const t = (item.title || item.t || "").toLowerCase().replace(/\s+/g, '');
+            const a = (item.artist || item.a || "").toLowerCase().replace(/\s+/g, '');
             fingerprint = `song-${t}-${a}`;
+        } else if (item.id) {
+            fingerprint = item.id; // Fallback auf ID
         }
 
-        // Dubletten-Check
-        if (renderedIds.has(fingerprint)) {
-            console.log("Dublette ignoriert:", fingerprint);
-            return;
+        // PRÜFEN, OB DIESER INHALT SCHON GEZEICHNET WURDE
+        if (fingerprint && renderedFingerprints.has(fingerprint)) {
+            console.log("Dublette blockiert:", fingerprint);
+            return; // Beendet den aktuellen Durchlauf der Schleife -> Song wird nicht gezeichnet
         }
         
-        renderedIds.add(fingerprint);
+        if (fingerprint) renderedFingerprints.add(fingerprint);
 
+        // ZEICHNEN
         if (item.type === 'block') {
             window.addBlockToBlocklistUI(item.t, item.s, item.cIdx || 0, item.id, item.createdBy);
-        } else if (item.type === 'single') {
-            // Hier falls nötig: window.addSingleSongToUI(item);
+        } else {
+            // Falls du eine Funktion für Einzelsongs hast, hier aufrufen:
+            // window.addSingleSongToUI(item);
         }
     });
 }
