@@ -1468,6 +1468,8 @@ function renderBlocks() {
     }
 };
 
+
+
     window.cycleColorGenericBlock = function(id) {
         const el = document.getElementById(id);
         let idx = (parseInt(el.dataset.colorIndex || 0) + 1) % folderColors.length;
@@ -1703,7 +1705,8 @@ function renderBlocks() {
             }
         } catch (e) { console.error(e); }
     };
-</script>
+
+
     window.deleteTemplate = async (event, docId, name) => {
         event.stopPropagation(); 
         if (!confirm(`Möchtest du das gespeicherte Set "${name}" wirklich löschen?`)) return;
