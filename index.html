@@ -1527,7 +1527,7 @@ function renderBlocks() {
     if (!bContainer || bContainer.innerText.includes('Lade Daten')) return;
 
     bContainer.innerHTML = ''; 
-    const renderedFingerprints = new Set(); // Wir speichern hier "Inhalts-Fingerabdrücke"
+    const renderedFingerprints = new Set(); 
 
     const list1 = Array.isArray(dataDJ1) ? dataDJ1 : [];
     const list2 = Array.isArray(dataDJ2) ? dataDJ2 : [];
@@ -1536,38 +1536,27 @@ function renderBlocks() {
     combined.forEach((item) => {
         if (!item) return;
 
-        // FINGERABDRUCK ERSTELLEN
-        // Wir nehmen den Titel und Artist, machen alles klein und löschen Leerzeichen
-        let fingerprint = "";
-        
-        if (item.type === 'block' && item.s && item.s.length > 0) {
-            // Für Blöcke nehmen wir den Inhalt des ersten Songs im Block als Identifikator
-            const firstSong = item.s[0];
-            const t = (firstSong.t || "").toLowerCase().replace(/\s+/g, '');
-            const a = (firstSong.a || "").toLowerCase().replace(/\s+/g, '');
-            fingerprint = `block-${t}-${a}`;
-        } else if (item.type === 'single' || item.title) {
-            const t = (item.title || item.t || "").toLowerCase().replace(/\s+/g, '');
-            const a = (item.artist || item.a || "").toLowerCase().replace(/\s+/g, '');
-            fingerprint = `song-${t}-${a}`;
-        } else if (item.id) {
-            fingerprint = item.id; // Fallback auf ID
-        }
+        // 1. Identifikator für das Element (Block oder Single)
+        let elementKey = item.id || `single-${item.t}-${item.artist}`;
+        if (renderedFingerprints.has(elementKey)) return;
+        renderedFingerprints.add(elementKey);
 
-        // PRÜFEN, OB DIESER INHALT SCHON GEZEICHNET WURDE
-        if (fingerprint && renderedFingerprints.has(fingerprint)) {
-            console.log("Dublette blockiert:", fingerprint);
-            return; // Beendet den aktuellen Durchlauf der Schleife -> Song wird nicht gezeichnet
-        }
-        
-        if (fingerprint) renderedFingerprints.add(fingerprint);
+        if (item.type === 'block' && Array.isArray(item.s)) {
+            // --- NEU: INNERER FILTER ---
+            // Wir filtern den Inhalt des Blocks, bevor wir ihn zeichnen
+            const seenInBlock = new Set();
+            const cleanSongs = item.s.filter(song => {
+                const songKey = `${(song.title || song.t || "").toLowerCase()}-${(song.artist || song.a || "").toLowerCase()}`.replace(/\s+/g, '');
+                if (seenInBlock.has(songKey)) return false;
+                seenInBlock.add(songKey);
+                return true;
+            });
 
-        // ZEICHNEN
-        if (item.type === 'block') {
-            window.addBlockToBlocklistUI(item.t, item.s, item.cIdx || 0, item.id, item.createdBy);
-        } else {
-            // Falls du eine Funktion für Einzelsongs hast, hier aufrufen:
-            // window.addSingleSongToUI(item);
+            // Wir zeichnen den Block nur mit den gesäuberten Songs
+            window.addBlockToBlocklistUI(item.t, cleanSongs, item.cIdx || 0, item.id, item.createdBy);
+            
+        } else if (item.type === 'single') {
+            // Einzelsong Logik...
         }
     });
 }
