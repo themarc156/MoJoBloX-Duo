@@ -743,6 +743,8 @@ window.dataDJ1 = [];
 window.dataDJ2 = [];
 window.lastKnownDJ1 = [];
 window.lastKnownDJ2 = [];
+window.sortableDJ1 = null;
+window.sortableDJ2 = null;
 
 window.isAppReady = false; // Wir sind noch nicht bereit
 
@@ -1269,37 +1271,46 @@ function renderBlocks() {
         });
     };
 
-    function initBlocklistMasterSortable() {
-    const el = document.getElementById('blocklist-container');
-    if (blocklistMasterSortable) blocklistMasterSortable.destroy();
+    function initMasterSortables() {
+    const el1 = document.getElementById('dj1-list');
+    const el2 = document.getElementById('dj2-list');
+
+    // Alte Instanzen zerstören, falls sie existieren
+    if (window.sortableDJ1) window.sortableDJ1.destroy();
+    if (window.sortableDJ2) window.sortableDJ2.destroy();
     
     // Nur DJ1 und DJ2 dürfen sortieren, 'diff' (Zuschauer) nicht
     if (currentUser === 'diff') return;
 
-    blocklistMasterSortable = new Sortable(el, {
-    group: 'shared-list', 
-    animation: 150, 
-    handle: '.drag-handle, .song-details', 
-    ghostClass: 'sortable-ghost',
-    disabled: userStates[currentUser].isLocked, 
-    onEnd: function(evt) {
-        // WICHTIG: Besitzer im DOM sofort aktualisieren!
-        // Sobald du den Song loslässt, gehört er dir (bzw. dem aktuellen User).
-        evt.item.setAttribute('data-owner', currentUser);
-        
-        // Erst danach speichern
-        window.saveData(); 
-    },
-    onMove: function (evt) {
-        const isDraggingBlock = evt.dragged.classList.contains('block-item');
-        const targetIsNested = evt.to.classList.contains('block-sortable-list');
+    const sortableOptions = {
+        group: 'shared-list', // Beide müssen die gleiche Gruppe haben, um zwischen den Listen zu wechseln!
+        animation: 150, 
+        handle: '.drag-handle, .song-details', 
+        ghostClass: 'sortable-ghost',
+        disabled: userStates[currentUser].isLocked, 
+        onEnd: function(evt) {
+            // WICHTIG: Besitzer im DOM sofort aktualisieren!
+            // Wenn man einen Block verschiebt, gehört er jetzt dem aktiven User (bzw. 
+            // man könnte hier auch logisch prüfen, in welcher Liste er gelandet ist)
+            evt.item.setAttribute('data-owner', currentUser);
+            
+            // Erst danach speichern
+            window.saveData(); 
+        },
+        onMove: function (evt) {
+            const isDraggingBlock = evt.dragged.classList.contains('block-item');
+            const targetIsNested = evt.to.classList.contains('block-sortable-list');
 
-        // Verhindert, dass Blöcke in andere Blöcke geschoben werden
-        if (isDraggingBlock && targetIsNested) {
-            return false;
+            // Verhindert, dass Blöcke in andere Blöcke geschoben werden
+            if (isDraggingBlock && targetIsNested) {
+                return false;
+            }
         }
-    }
-});
+    };
+
+    // Initialisierung für BEIDE Container
+    if (el1) window.sortableDJ1 = new Sortable(el1, sortableOptions);
+    if (el2) window.sortableDJ2 = new Sortable(el2, sortableOptions);
 }
 
     window.toggleAllBlocks = function() {
@@ -1426,33 +1437,48 @@ function renderBlocks() {
 };
 
     window.addSongToTopList = function() {
-        const input = document.getElementById('blocklistInputGlobal');
-        const val = input.value.trim();
-        if(!val) return;
-        
-        const card = document.createElement('div');
-        card.className = 'song-card';
-        
-        card.innerHTML = `
-            <div class="song-details" onclick="window.editSongPrompt(this)">
-                <span class="song-title-text">${val}</span>
-            </div>
-            <div class="crossfade-btn-group">
-                <span class="crossfade-toggle-btn">🔀</span>
-                <span class="crossfade-time-display">${DEFAULT_CROSSFADE}s</span>
-            </div>
-            <span class="play-preview-btn">▶️</span>
-            <span class="delete-btn" onclick="window.deleteSongCard(this)">×</span>`;
+    const input = document.getElementById('blocklistInputGlobal');
+    const val = input.value.trim();
+    if(!val) return;
+
+    // 1. DYNAMISCHE WAHL: Wohin soll der Song?
+    // Wenn aktuell DJ2 (Gunnar) aktiv ist, nimm 'dj2-list', sonst immer 'dj1-list'
+    const containerId = (currentUser === 'dj2') ? 'dj2-list' : 'dj1-list';
+    const container = document.getElementById(containerId);
+
+    if (!container) {
+        console.error("Fehler: Container '" + containerId + "' nicht im DOM gefunden!");
+        return;
+    }
+
+    // 2. Element erstellen
+    const card = document.createElement('div');
+    card.className = 'song-card';
+    
+    card.innerHTML = `
+        <div class="song-details" onclick="window.editSongPrompt(this)">
+            <span class="song-title-text">${val}</span>
+        </div>
+        <div class="crossfade-btn-group">
+            <span class="crossfade-toggle-btn">🔀</span>
+            <span class="crossfade-time-display">${DEFAULT_CROSSFADE}s</span>
+        </div>
+        <span class="play-preview-btn">▶️</span>
+        <span class="delete-btn" onclick="window.deleteSongCard(this)">×</span>`;
             
-        const playBtn = card.querySelector('.play-preview-btn');
-        playBtn.addEventListener('click', (e) => window.playPreview(e, val));
-        
-        window.setupCrossfadeEvents(card);
+    const playBtn = card.querySelector('.play-preview-btn');
+    playBtn.addEventListener('click', (e) => window.playPreview(e, val));
+    
+    window.setupCrossfadeEvents(card);
             
-        document.getElementById('blocklist-container').prepend(card);
-        input.value = ""; 
-        window.saveData();
-    };
+    // 3. HIER: Prepend in den dynamisch gefundenen Container
+    container.prepend(card);
+    
+    input.value = ""; 
+    
+    // 4. Speichern
+    window.saveData();
+};
 
     window.addBlockToBlocklistUI = function(title, songs, colorIdx, blockId, owner) {
     const listId = 'bll-' + Math.random().toString(36).substr(2, 9);
@@ -1526,8 +1552,15 @@ function renderBlocks() {
         window.setupCrossfadeEvents(card);
     });
 
-    // In den Container einfügen
-    document.getElementById('blocklist-container').appendChild(div);
+    // --- NEUER DYNAMISCHER CONTAINER-CODE ---
+    const targetListId = (blockOwner === 'dj2') ? 'dj2-list' : 'dj1-list';
+    const container = document.getElementById(targetListId);
+    
+    if (container) {
+        container.appendChild(div);
+    } else {
+        console.error(`Fehler: Container '${targetListId}' nicht gefunden!`);
+    }
 
     // SortableJS Initialisierung
     if (currentUser !== 'diff') {
@@ -1536,6 +1569,7 @@ function renderBlocks() {
             animation: 150, 
             disabled: userStates[currentUser].isLocked, 
             onEnd: () => {
+                // Update der Song-Zähler in allen Blöcken
                 document.querySelectorAll('.block-item').forEach(b => {
                     const countSpan = b.querySelector('.block-song-count');
                     const list = b.querySelector('.block-sortable-list');
@@ -1732,23 +1766,21 @@ onSnapshot(doc(db, "mojoblox", "set1_dj2"), (docSnap) => {
 
 window.saveData = async () => {
     // 1. SICHERHEIT: Wenn die App noch lädt, darf nicht gespeichert werden!
-    // (Falls isAppReady noch nicht definiert ist, greift '!' ebenfalls)
     if (!window.isAppReady) {
         console.warn("SICHERHEIT: Speichern abgebrochen: App ist noch nicht bereit.");
         return;
     }
 
     if (currentUser === 'diff') return;
-    const container = document.getElementById('blocklist-container');
-    if (!container) return;
 
-    // 2. DOM lesen
-    const elements = container.querySelectorAll('.block-item');
+    // 2. DOM lesen: Wir suchen jetzt in BEIDEN Listen nach .block-item
+    const elements = document.querySelectorAll('#dj1-list .block-item, #dj2-list .block-item');
     
-    // 3. SICHERHEIT: Wenn der Container leer ist, keinesfalls speichern!
-    if (elements.length === 0) {
-        console.warn("SICHERHEIT: Container ist leer. Speichern abgebrochen, um Datenverlust zu vermeiden!");
-        return; 
+    // 3. SICHERHEIT: Wenn wir absolut gar keine Elemente finden, könnte ein Ladefehler vorliegen.
+    // Aber Achtung: Wenn du bewusst eine leere Liste speichern willst, wäre das hier zu streng.
+    // Falls das UI bei dir "Lade Daten..." zeigt, schützt uns isAppReady oben.
+    if (elements.length === 0 && window.isAppReady) {
+        console.warn("HINWEIS: Keine Elemente gefunden, speichere leere Liste.");
     }
 
     const allItems = [...(window.dataDJ1 || []), ...(window.dataDJ2 || [])];
@@ -1760,6 +1792,7 @@ window.saveData = async () => {
         const owner = el.getAttribute('data-owner');
         const id = el.getAttribute('data-id');
 
+        // Wir sammeln nur die Items, die dem aktuellen User gehören
         if (owner === currentUser) {
             const originalItem = itemMap.get(id);
             if (originalItem) {
