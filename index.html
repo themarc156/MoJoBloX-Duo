@@ -1369,18 +1369,37 @@ function renderBlocks() {
     }
 };
 
-    window.deleteSongCard = function(btnElement) {
-        const card = btnElement.closest('.song-card');
-        const blockItem = card.closest('.block-item');
-        card.remove();
-        
-        if (blockItem) {
-            const countSpan = blockItem.querySelector('.block-song-count');
-            const list = blockItem.querySelector('.block-sortable-list');
-            if (countSpan && list) countSpan.innerText = ` (${list.children.length})`;
+    window.deleteItem = async function(id) {
+    console.log("Lösche Element mit ID:", id);
+    
+    // 1. Identifizieren, ob es DJ1 oder DJ2 gehört
+    // Wir erstellen ein Update-Array ohne das zu löschende Item
+    let targetDoc = null;
+    let newData = null;
+
+    if (window.dataDJ1.find(item => item.id === id)) {
+        targetDoc = "set1_dj1";
+        newData = window.dataDJ1.filter(item => item.id !== id);
+    } else if (window.dataDJ2.find(item => item.id === id)) {
+        targetDoc = "set1_dj2";
+        newData = window.dataDJ2.filter(item => item.id !== id);
+    }
+
+    // 2. Firebase aktualisieren
+    if (targetDoc && newData) {
+        try {
+            await updateDoc(doc(db, "mojoblox", targetDoc), {
+                blocklist: newData
+            });
+            console.log("Erfolgreich aus DB gelöscht. Listener wird UI automatisch aktualisieren.");
+            // HIER MUSS NICHTS MEHR STEHEN. 
+            // Der onSnapshot-Listener merkt das Update und triggert automatisch renderCombinedUI()
+        } catch (error) {
+            console.error("Fehler beim Löschen:", error);
+            alert("Löschen fehlgeschlagen!");
         }
-        window.saveData();
-    };
+    }
+};
 
     window.addSongToTopList = function() {
         const input = document.getElementById('blocklistInputGlobal');
