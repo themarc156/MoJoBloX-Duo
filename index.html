@@ -727,6 +727,8 @@ header {
     let nextSongTriggered = false; 
     
 
+window.dataDJ1 = []; 
+window.dataDJ2 = [];
 window.lastKnownDJ1 = [];
 window.lastKnownDJ2 = [];
 
@@ -1551,9 +1553,7 @@ function renderBlocks() {
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Interne Speicher für die getrennten Datenströme
-    let dataDJ1 = [];
-    let dataDJ2 = [];
+
 
     // --- 1. ECHTZEIT-SYNC MIT DUBLETTEN-FILTER ---
 
@@ -1561,16 +1561,19 @@ function renderBlocks() {
     const bContainer = document.getElementById('blocklist-container');
     if (!bContainer) return;
 
-    // --- SICHERHEITS-LOGIK & DATEN ABRUF ---
-    // Wir nehmen die Live-Daten, wenn vorhanden, sonst das Backup aus dem Cache
-    const list1 = (Array.isArray(dataDJ1) && dataDJ1.length > 0) ? dataDJ1 : (window.lastKnownDJ1 || []);
-    const list2 = (Array.isArray(dataDJ2) && dataDJ2.length > 0) ? dataDJ2 : (window.lastKnownDJ2 || []);
+    // --- ABSOLUTE SOURCE OF TRUTH ---
+    // Hier greifen wir explizit auf die globalen Fenster-Daten zu
+    const list1 = (Array.isArray(window.dataDJ1) && window.dataDJ1.length > 0) 
+                  ? window.dataDJ1 
+                  : (window.lastKnownDJ1 || []);
+                  
+    const list2 = (Array.isArray(window.dataDJ2) && window.dataDJ2.length > 0) 
+                  ? window.dataDJ2 
+                  : (window.lastKnownDJ2 || []);
 
-    const combined = [...list1, ...list2];
+    console.log("RENDER DEBUG: DJ1(Global):", list1.length, "DJ2(Global):", list2.length);
 
-    console.log("RENDER DEBUG: DJ1 nutzt", list1.length, "Elemente, DJ2 nutzt", list2.length, "Elemente.");
-
-    bContainer.innerHTML = ''; 
+    bContainer.innerHTML = '';
     const renderedFingerprints = new Set();
 
     // 3. Sicherheits-Check: Ist die Liste leer?
@@ -1638,14 +1641,14 @@ async function handleUnlock() {
 onSnapshot(doc(db, "mojoblox", "set1_dj1"), (docSnap) => {
     if (docSnap.exists()) {
         const data = docSnap.data();
-        
-        // NEU: Nur überschreiben, wenn blocklist WIRKLICH existiert
         if (data && Array.isArray(data.blocklist)) {
-            dataDJ1 = data.blocklist;
-            window.lastKnownDJ1 = data.blocklist; // Backup im Cache
+            window.dataDJ1 = data.blocklist;
+            window.lastKnownDJ1 = data.blocklist;
+            console.log("DEBUG: DJ1 Daten global gesetzt. Länge:", window.dataDJ1.length);
         }
-        
         renderCombinedUI();
+    } else {
+        console.warn("ALARM: Dokument 'set1_dj1' existiert nicht!");
     }
 });
 
@@ -1653,13 +1656,11 @@ onSnapshot(doc(db, "mojoblox", "set1_dj1"), (docSnap) => {
 onSnapshot(doc(db, "mojoblox", "set1_dj2"), (docSnap) => {
     if (docSnap.exists()) {
         const data = docSnap.data();
-        
-        // NEU: Nur überschreiben, wenn blocklist WIRKLICH existiert
         if (data && Array.isArray(data.blocklist)) {
-            dataDJ2 = data.blocklist;
-            window.lastKnownDJ2 = data.blocklist; // Backup im Cache
+            window.dataDJ2 = data.blocklist;
+            window.lastKnownDJ2 = data.blocklist;
+            console.log("DEBUG: DJ2 Daten global gesetzt. Länge:", window.dataDJ2.length);
         }
-        
         renderCombinedUI();
     }
 });
