@@ -1370,34 +1370,44 @@ function renderBlocks() {
 };
 
     window.deleteItem = async function(id) {
+    if (!id) {
+        console.warn("Löschen abgebrochen: Keine ID übergeben.");
+        return;
+    }
+    
     console.log("Lösche Element mit ID:", id);
     
-    // 1. Identifizieren, ob es DJ1 oder DJ2 gehört
-    // Wir erstellen ein Update-Array ohne das zu löschende Item
+    // Sicherheit: Fallback auf leere Arrays, falls Daten noch nicht geladen sind
+    const list1 = window.dataDJ1 || [];
+    const list2 = window.dataDJ2 || [];
+
     let targetDoc = null;
     let newData = null;
 
-    if (window.dataDJ1.find(item => item.id === id)) {
+    // Suche in DJ1
+    if (list1.find(item => item.id === id)) {
         targetDoc = "set1_dj1";
-        newData = window.dataDJ1.filter(item => item.id !== id);
-    } else if (window.dataDJ2.find(item => item.id === id)) {
+        newData = list1.filter(item => item.id !== id);
+    } 
+    // Suche in DJ2
+    else if (list2.find(item => item.id === id)) {
         targetDoc = "set1_dj2";
-        newData = window.dataDJ2.filter(item => item.id !== id);
+        newData = list2.filter(item => item.id !== id);
     }
 
-    // 2. Firebase aktualisieren
+    // Wenn gefunden: Datenbank-Update
     if (targetDoc && newData) {
         try {
             await updateDoc(doc(db, "mojoblox", targetDoc), {
                 blocklist: newData
             });
-            console.log("Erfolgreich aus DB gelöscht. Listener wird UI automatisch aktualisieren.");
-            // HIER MUSS NICHTS MEHR STEHEN. 
-            // Der onSnapshot-Listener merkt das Update und triggert automatisch renderCombinedUI()
+            console.log("Erfolgreich aus DB gelöscht.");
         } catch (error) {
             console.error("Fehler beim Löschen:", error);
-            alert("Löschen fehlgeschlagen!");
+            alert("Löschen fehlgeschlagen: " + error.message);
         }
+    } else {
+        console.warn("Element mit ID", id, "wurde in den globalen Daten nicht gefunden.");
     }
 };
 
@@ -1622,8 +1632,15 @@ import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, d
         } else if (item.type === 'single') {
             const singleEl = document.createElement('div');
             singleEl.className = 'block-item single-song-card'; 
-            singleEl.setAttribute('data-id', item.id);
+            singleEl.setAttribute('data-id', item.id || 'no-id');
             singleEl.setAttribute('data-owner', item.createdBy || 'dj1');
+            
+            // --- HIER DIE ÄNDERUNG ---
+            // Wir prüfen, ob eine ID da ist. Wenn nicht, zeigen wir kein "X" an.
+            const deleteButtonHtml = item.id 
+                ? `<button onclick="deleteItem('${item.id}')" class="btn-sm">❌</button>` 
+                : `<span class="btn-sm">⚠️</span>`;
+
             singleEl.innerHTML = `
                 <div class="block-header" style="display: flex; align-items: center; gap: 10px; padding: 10px; background: #2a2a2a; border-radius: 8px; border-left: 4px solid #ffcc00;">
                     <div class="drag-handle" style="cursor: grab;">☰</div>
@@ -1633,7 +1650,7 @@ import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, d
                     </div>
                     <div class="block-actions">
                         <button onclick="window.playPreview(event, '${item.t || item.title}', '${item.a || item.artist || ''}')" class="btn-sm">▶️</button>
-                        <button onclick="deleteItem('${item.id}')" class="btn-sm">❌</button>
+                        ${deleteButtonHtml}
                     </div>
                 </div>
             `;
