@@ -662,8 +662,8 @@ header {
 <body>
 
 <header>
-    <div class="header-title" style="text-align: center; width: 100%; cursor: default; font-size: 1.2rem; padding: 10px 0;">
-        MoJoBloX Duo <span style="font-size: 0.8em; opacity: 0.6; margin-left: 10px;">(???)</span>
+    <div class="header-title" style="text-align: center; width: 100%; font-size: 1.5rem; padding: 10px 0; font-weight: bold;">
+        MoJoBloX Duo
     </div>
 </header>
 
@@ -671,42 +671,46 @@ header {
 
     <div id="takeover-infozone" class="drop-target-area" style="display:none; border-style: solid;">👉 TIPPE AUF DAS (+), UM ES ZU ÜBERNEHMEN</div>
 
-    <div id="main-content-wrapper" style="display: flex; gap: 20px; width: 100%; align-items: flex-start;">
+    <div id="main-content-wrapper" style="display: flex; gap: 20px; width: 100%; align-items: flex-start; padding: 10px;">
     
-    <div id="dj1-container" class="split-half">
+    <div id="dj1-container" class="dj-column">
+        <h2 style="text-align: center; margin: 5px 0;">Marc</h2>
+        
         <div class="dj-toolbar">
-            <div class="header-btn" onclick="headerActionLeft('dj1')" title="Editieren">✏️</div>
-            <div class="header-btn" onclick="window.toggleSaveDropdown('dj1')" title="Speichern">💾</div>
-            <div class="header-btn" onclick="toggleCleanMode('dj1')" title="Ansicht">👁️</div>
-            <div class="header-btn" onclick="toggleExpandAll('dj1')" title="Klappen">↕️</div>
-            <div class="header-btn" onclick="toggleLock('dj1')" title="Sperren">🔒</div>
+            <div class="tool-btn" onclick="headerActionLeft('dj1')" title="Editieren">✏️</div>
+            <div class="tool-btn" onclick="window.toggleSaveDropdown('dj1')" title="Speichern">💾</div>
+            <div class="tool-btn" onclick="toggleCleanMode('dj1')" title="Ansicht">👁️</div>
+            <div class="tool-btn" onclick="toggleExpandAll('dj1')" title="Klappen">↕️</div>
+            <div class="tool-btn" onclick="toggleLock('dj1')" title="Sperren">🔒</div>
         </div>
 
         <div class="controls-wrapper">
             <button class="btn-add-block" onclick="addNewBlockPrompt('dj1')">+ NEUER BLOCK</button>
-            <div class="input-section" style="display: flex; gap: 5px;">
+            <div class="input-section" style="display: flex; gap: 5px; margin-top: 5px;">
                 <div class="btn-folder-select" onclick="window.triggerFolderSelection('dj1')">📁</div>
-                <input type="text" id="input-dj1" placeholder="Song für Marc..." onkeydown="if(event.key==='Enter') addSongToTopList('dj1')">
+                <input type="text" id="input-dj1" placeholder="Song..." style="flex-grow: 1;">
                 <button class="btn-plus" onclick="addSongToTopList('dj1')">+</button>
             </div>
         </div>
         <div id="dj1-list" class="drop-zone"></div>
     </div>
 
-    <div id="dj2-container" class="split-half">
+    <div id="dj2-container" class="dj-column">
+        <h2 style="text-align: center; margin: 5px 0;">Gunnar</h2>
+        
         <div class="dj-toolbar">
-            <div class="header-btn" onclick="headerActionLeft('dj2')" title="Editieren">✏️</div>
-            <div class="header-btn" onclick="window.toggleSaveDropdown('dj2')" title="Speichern">💾</div>
-            <div class="header-btn" onclick="toggleCleanMode('dj2')" title="Ansicht">👁️</div>
-            <div class="header-btn" onclick="toggleExpandAll('dj2')" title="Klappen">↕️</div>
-            <div class="header-btn" onclick="toggleLock('dj2')" title="Sperren">🔒</div>
+            <div class="tool-btn" onclick="headerActionLeft('dj2')" title="Editieren">✏️</div>
+            <div class="tool-btn" onclick="window.toggleSaveDropdown('dj2')" title="Speichern">💾</div>
+            <div class="tool-btn" onclick="toggleCleanMode('dj2')" title="Ansicht">👁️</div>
+            <div class="tool-btn" onclick="toggleExpandAll('dj2')" title="Klappen">↕️</div>
+            <div class="tool-btn" onclick="toggleLock('dj2')" title="Sperren">🔒</div>
         </div>
 
         <div class="controls-wrapper">
             <button class="btn-add-block" onclick="addNewBlockPrompt('dj2')">+ NEUER BLOCK</button>
-            <div class="input-section" style="display: flex; gap: 5px;">
+            <div class="input-section" style="display: flex; gap: 5px; margin-top: 5px;">
                 <div class="btn-folder-select" onclick="window.triggerFolderSelection('dj2')">📁</div>
-                <input type="text" id="input-dj2" placeholder="Song für Gunnar..." onkeydown="if(event.key==='Enter') addSongToTopList('dj2')">
+                <input type="text" id="input-dj2" placeholder="Song..." style="flex-grow: 1;">
                 <button class="btn-plus" onclick="addSongToTopList('dj2')">+</button>
             </div>
         </div>
