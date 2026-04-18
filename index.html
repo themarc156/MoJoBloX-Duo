@@ -513,6 +513,10 @@ header {
     margin-top: 10px;
 }
 
+.controls-wrapper {
+    margin-top: 5px; /* Ein ganz kleiner Abstand zum Header */
+}
+
 /* Linker Button: Neuer Block */
 .btn-add-block {
     width: 100%;
@@ -675,8 +679,6 @@ header {
     <div id="main-content-wrapper" style="display: flex; gap: 20px; width: 100%; align-items: flex-start;">
     
     <div id="dj1-container" class="split-half">
-        <h3 style="text-align: center; color: #555;">Marc's Songs</h3>
-        
         <div class="controls-wrapper" style="display: flex; flex-direction: column; gap: 10px;">
             <button class="btn-add-block" onclick="addNewBlockPrompt('dj1')">+ NEUER BLOCK / ORDNER</button>
             <div class="input-section" style="display: flex; gap: 5px;">
@@ -686,12 +688,10 @@ header {
             </div>
         </div>
         
-        <div id="dj1-list" class="drop-zone"></div>
+        <div id="dj1-list" class="drop-zone" style="margin-top: 10px;"></div>
     </div>
 
     <div id="dj2-container" class="split-half">
-        <h3 style="text-align: center; color: #555;">Gunnar's Songs</h3>
-        
         <div class="controls-wrapper" style="display: flex; flex-direction: column; gap: 10px;">
             <button class="btn-add-block" onclick="addNewBlockPrompt('dj2')">+ NEUER BLOCK / ORDNER</button>
             <div class="input-section" style="display: flex; gap: 5px;">
@@ -701,7 +701,7 @@ header {
             </div>
         </div>
 
-        <div id="dj2-list" class="drop-zone"></div>
+        <div id="dj2-list" class="drop-zone" style="margin-top: 10px;"></div>
     </div>
 
 </div>
