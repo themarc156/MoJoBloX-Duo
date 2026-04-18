@@ -725,6 +725,11 @@ header {
 
     let fadeInInterval = null;
     let nextSongTriggered = false; 
+    let lastKnownDJ1 = []; // Cache für DJ1
+let lastKnownDJ2 = []; // Cache für DJ2
+
+window.lastKnownDJ1 = [];
+window.lastKnownDJ2 = [];
 
     window.toggleCrossfadeState = function(cardElement) {
         const toggleBtn = cardElement.querySelector('.crossfade-toggle-btn');
@@ -1638,8 +1643,15 @@ async function handleUnlock() {
 onSnapshot(doc(db, "mojoblox", "set1_dj1"), (docSnap) => {
     if (docSnap.exists()) {
         const data = docSnap.data();
-        // Hier stellen wir sicher, dass wir immer das Array nehmen
-        dataDJ1 = Array.isArray(data.blocklist) ? data.blocklist : [];
+        
+        // --- ÄNDERUNG HIER ---
+        // Nur überschreiben, wenn die Daten valide sind!
+        if (data && Array.isArray(data.blocklist)) {
+            dataDJ1 = data.blocklist;
+            window.lastKnownDJ1 = data.blocklist; // Cache für Notfälle aktualisieren
+        }
+        // Wenn keine Daten da sind, passiert NICHTS (dataDJ1 behält seinen alten Wert)
+        
         renderCombinedUI();
     }
 });
@@ -1648,8 +1660,13 @@ onSnapshot(doc(db, "mojoblox", "set1_dj1"), (docSnap) => {
 onSnapshot(doc(db, "mojoblox", "set1_dj2"), (docSnap) => {
     if (docSnap.exists()) {
         const data = docSnap.data();
-        // Hier stellen wir sicher, dass wir immer das Array nehmen
-        dataDJ2 = Array.isArray(data.blocklist) ? data.blocklist : [];
+        
+        // --- ÄNDERUNG HIER ---
+        if (data && Array.isArray(data.blocklist)) {
+            dataDJ2 = data.blocklist;
+            window.lastKnownDJ2 = data.blocklist; // Cache für Notfälle aktualisieren
+        }
+        
         renderCombinedUI();
     }
 });
