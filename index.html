@@ -1540,10 +1540,12 @@ function renderBlocks() {
 
     function renderCombinedUI() {
     const bContainer = document.getElementById('blocklist-container');
-    if (!bContainer || bContainer.innerText.includes('Lade Daten')) return;
+    if (!bContainer) return;
 
+    // Wir leeren den Container IMMER, um Platz für die neuen Daten zu schaffen.
+    // Die Prüfung auf "Lade Daten" entfernen wir komplett.
     bContainer.innerHTML = ''; 
-    const renderedFingerprints = new Set(); 
+    const renderedFingerprints = new Set();
 
     const list1 = Array.isArray(dataDJ1) ? dataDJ1 : [];
     const list2 = Array.isArray(dataDJ2) ? dataDJ2 : [];
