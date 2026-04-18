@@ -52,7 +52,7 @@ header.main-header {
     position: sticky;
     top: 0;
     z-index: 1000;
-    height: 34px !important;
+height: 40px !important; /* Etwas höher für bessere Bedienbarkeit */
 }
 
 .header-center { font-size: 1rem; letter-spacing: 1px; text-align: center; }
@@ -67,9 +67,9 @@ header.main-header {
     position: sticky;
     top: 34px;
     z-index: 1001;
-    background: var(--bg-color);
-    padding: 2px 0 !important;
-    align-items: center;
+background: var(--bg-color); 
+padding: 6px !important; /* Hier fehlte der Atemraum */  
+  align-items: center;
 }
 
 input[type="text"] { 
@@ -108,15 +108,15 @@ input[type="text"] {
 /* Song-Karten: Das Herzstück der Platzersparnis */
 .song-card { 
     background: var(--card-bg); 
-    margin-bottom: 0px !important; 
-    padding: 1px 6px !important; 
-    border-radius: 3px; 
+    margin-bottom: 2px !important; /* Kleiner Abstand zwischen den Karten */
+    padding: 4px 8px !important;   /* Mehr Luft für den Text */
+    border-radius: 4px; 
     display: flex; 
     justify-content: space-between; 
     align-items: center; 
-    font-size: 0.8rem; 
-    border: 1px solid rgba(255,255,255,0.05); 
-    min-height: 22px !important; 
+    font-size: 0.85rem; 
+    border: 1px solid rgba(255,255,255,0.08); 
+    min-height: 30px !important; /* Deutlich besser lesbar */
 }
 
 .song-title-text { font-size: 0.8rem; font-weight: bold; }
@@ -163,7 +163,14 @@ body.user-dj2 #blocklist-container > .song-card { border-left: 4px solid var(--d
 .block-item.collapsed .block-header strong { text-decoration: none !important; }
 
 /* Header von Blöcken flacher */
-.block-header { padding: 1px 6px !important; min-height: 22px !important; display: flex; justify-content: space-between; align-items: center; }
+.block-header { 
+    padding: 4px 8px !important; 
+    background: rgba(255, 255, 255, 0.08); /* Etwas dunklerer Hintergrund zur Trennung */
+    display: flex; 
+    align-items: center; 
+    min-height: 28px !important; 
+    margin-bottom: 2px;
+}
 .block-header strong { font-size: 0.9rem; flex-grow: 1; cursor: pointer; padding: 0 2px; }
 body.edit-mode .block-header strong { cursor: cell; text-decoration: underline dotted var(--accent-color); }
 
@@ -452,8 +459,11 @@ body.user-dj2 .song-card.is-playing { animation: atmen-orange 2s infinite ease-i
 
 /* Grid-Layout */
 #blocklist-container {
-    display: grid; grid-template-columns: 1fr 1fr;
-    gap: 4px !important; padding: 2px !important; align-items: flex-start;
+    display: grid; 
+    grid-template-columns: 1fr 1fr;
+    gap: 8px !important; /* Mehr Abstand zwischen den Spalten */
+    padding: 6px !important; 
+    align-items: flex-start;
 }
 
 .block-item { background: #1a1a1a; border: 1px solid #333; border-radius: 4px; overflow: hidden; display: flex; flex-direction: column; }
