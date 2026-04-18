@@ -1168,10 +1168,25 @@ function renderBlocks() {
     };
 
     window.toggleLock = function() {
-        userStates[currentUser].isLocked = !userStates[currentUser].isLocked;
-        window.applyUserStatesToUI();
-        if (window.renderCurrentState) window.renderCurrentState();
-    };
+    // 1. Status umschalten
+    userStates[currentUser].isLocked = !userStates[currentUser].isLocked;
+    
+    // 2. Visuelles Feedback (Lock-Icon etc.)
+    window.applyUserStatesToUI();
+    
+    // 3. Neu rendern (Hier wird der Container gelöscht und neu gefüllt)
+    if (typeof window.renderCombinedUI === 'function') {
+        window.renderCombinedUI();
+    }
+
+    // 4. WICHTIG: Das DOM muss erst fertig geladen sein, bevor Sortable startet
+    setTimeout(() => {
+        if (typeof window.initBlocklistMasterSortable === 'function') {
+            window.initBlocklistMasterSortable();
+        }
+        console.log("UI entsperrt & Sortable neu initialisiert.");
+    }, 100); // 100ms Verzögerung sorgt für Stabilität
+};
 
     window.applyUserStatesToUI = function() {
         const state = userStates[currentUser];
@@ -1542,6 +1557,8 @@ function renderBlocks() {
     const bContainer = document.getElementById('blocklist-container');
     if (!bContainer) return;
 
+    console.log("DJ1 count:", (dataDJ1 || []).length, "DJ2 count:", (dataDJ2 || []).length);
+
     // 1. Container leeren, um UI-Konflikte zu vermeiden
     bContainer.innerHTML = ''; 
     const renderedFingerprints = new Set();
@@ -1599,6 +1616,22 @@ function renderBlocks() {
             bContainer.appendChild(singleEl);
         }
     });
+}
+
+async function handleUnlock() {
+    // 1. Status auf "unlocked" setzen (oder was auch immer deine Logik ist)
+    userStates[currentUser].isLocked = false;
+    
+    // 2. UI neu zeichnen
+    renderCombinedUI();
+    
+    // 3. Kurz warten, damit der Browser die neuen Elemente im DOM erstellt hat
+    await new Promise(resolve => setTimeout(resolve, 100)); 
+    
+    // 4. Jetzt erst Sortable wieder aktivieren
+    initBlocklistMasterSortable();
+    
+    console.log("UI entsperrt und Sortable neu initialisiert.");
 }
 
     // Lauschen auf Marc (DJ1)
