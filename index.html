@@ -1581,7 +1581,10 @@ import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, d
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-
+// WICHTIG: Das hier macht die Firebase-Dinge global verfügbar
+window.updateDoc = updateDoc;
+window.doc = doc;
+window.db = db;
 
     // --- 1. ECHTZEIT-SYNC MIT DUBLETTEN-FILTER ---
 
