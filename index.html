@@ -647,6 +647,42 @@ header {
     pointer-events: auto;
 }
 
+/* Layout für die beiden Spalten - Zusammengefasst */
+.dj-column {
+    flex: 1; /* Beide nehmen gleich viel Platz ein */
+    min-width: 300px; 
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    /* Optional: Trennung optisch unterstreichen */
+}
+
+#dj1-container { 
+    border-right: 1px solid rgba(255,255,255,0.1); 
+}
+
+/* Die Toolbar als horizontale Reihe */
+.dj-toolbar {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 8px;
+    border-radius: 8px;
+    margin: 5px 0 10px 0;
+}
+
+.tool-btn {
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: transform 0.1s;
+    padding: 2px 5px;
+}
+
+.tool-btn:hover {
+    transform: scale(1.2);
+}
+
 /* Mobile Ansicht: Auf dem Handy alles untereinander */
 @media (max-width: 768px) {
     #blocklist-container {
