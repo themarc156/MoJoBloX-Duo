@@ -658,41 +658,42 @@ header {
 </header>
 
 <div id="page-blocklist" class="page">
-    <div class="split-action-row">
-        
-        <div class="split-half">
-            <button class="btn-add-block" id="ui-add-block-btn" onclick="addNewBlockPrompt()">
-                + NEUER BLOCK / ORDNER
-            </button>
-        </div>
-
-        <div class="split-half">
-            <div class="input-section" id="ui-input-section">
-                <div class="btn-folder-select" id="btn-folder-select" onclick="window.triggerFolderSelection()" title="Lokalen Musikordner verknüpfen">📁</div>
-                
-                <input type="text" id="blocklistInputGlobal" placeholder="Song schnell hinzufügen..." 
-                       onkeydown="if(event.key==='Enter') addSongToTopList()">
-                
-                <button class="btn-plus" onclick="addSongToTopList()">+</button>
-            </div>
-        </div>
-        
-    </div>
 
     <div id="takeover-infozone" class="drop-target-area" style="display:none; border-style: solid;">👉 TIPPE AUF DAS (+), UM ES ZU ÜBERNEHMEN</div>
 
-<div id="main-content-wrapper" style="display: flex; gap: 10px; width: 100%;">
-    
-    <div id="dj1-container" class="split-half" style="min-height: 200px;">
-        <h3 style="text-align: center; color: #555;">Marc's Songs</h3>
-        <div id="dj1-list" class="drop-zone"></div>
-    </div>
+    <div id="main-content-wrapper" style="display: flex; gap: 20px; width: 100%;">
+        
+        <div id="dj1-container" class="split-half" style="min-height: 200px; flex: 1;">
+            <h3 style="text-align: center; color: #555;">Marc's Songs</h3>
+            
+            <div class="controls-wrapper" style="margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px;">
+                <button class="btn-add-block" onclick="addNewBlockPrompt('dj1')">+ NEUER BLOCK / ORDNER</button>
+                <div class="input-section" style="display: flex; gap: 5px;">
+                    <div class="btn-folder-select" onclick="window.triggerFolderSelection('dj1')">📁</div>
+                    <input type="text" id="input-dj1" placeholder="Song für Marc..." onkeydown="if(event.key==='Enter') addSongToTopList('dj1')">
+                    <button class="btn-plus" onclick="addSongToTopList('dj1')">+</button>
+                </div>
+            </div>
+            
+            <div id="dj1-list" class="drop-zone"></div>
+        </div>
 
-    <div id="dj2-container" class="split-half" style="min-height: 200px;">
-        <h3 style="text-align: center; color: #555;">Gunnar's Songs</h3>
-        <div id="dj2-list" class="drop-zone"></div>
-    </div>
+        <div id="dj2-container" class="split-half" style="min-height: 200px; flex: 1;">
+            <h3 style="text-align: center; color: #555;">Gunnar's Songs</h3>
+            
+            <div class="controls-wrapper" style="margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px;">
+                <button class="btn-add-block" onclick="addNewBlockPrompt('dj2')">+ NEUER BLOCK / ORDNER</button>
+                <div class="input-section" style="display: flex; gap: 5px;">
+                    <div class="btn-folder-select" onclick="window.triggerFolderSelection('dj2')">📁</div>
+                    <input type="text" id="input-dj2" placeholder="Song für Gunnar..." onkeydown="if(event.key==='Enter') addSongToTopList('dj2')">
+                    <button class="btn-plus" onclick="addSongToTopList('dj2')">+</button>
+                </div>
+            </div>
 
+            <div id="dj2-list" class="drop-zone"></div>
+        </div>
+
+    </div>
 </div>
 
 <div id="crossfade-popup" class="crossfade-popup-slider">
@@ -1379,16 +1380,13 @@ function renderBlocks() {
         window.saveData();
     };
 
-    window.addNewBlockPrompt = function() {
+    // Ändere die Funktion so:
+window.addNewBlockPrompt = function(owner) {
     const name = prompt("Name des neuen Blocks:", "Neuer Block");
     if(name && name.trim() !== '') { 
         const newId = 'blf-' + Math.random().toString(36).substr(2, 9);
         
-        // Hier nutzen wir die gefundene Variable 'currentUser'
-        // Falls sie mal leer sein sollte, nehmen wir standardmäßig 'dj1'
-        const owner = currentUser || 'dj1'; 
-
-        // Wir geben 'owner' als neuen Parameter mit
+        // Jetzt übergeben wir den expliziten owner ('dj1' oder 'dj2')
         window.addBlockToBlocklistUI(name, [], 0, newId, owner); 
         window.saveData(); 
     }
@@ -1436,24 +1434,27 @@ function renderBlocks() {
     }
 };
 
-    window.addSongToTopList = function() {
-    const input = document.getElementById('blocklistInputGlobal');
+    window.addSongToTopList = function(owner) {
+    // 1. DYNAMISCHE WAHL des Inputs und Containers
+    // 'owner' kommt als 'dj1' oder 'dj2' vom Button-Klick
+    const input = document.getElementById('input-' + owner);
+    const container = document.getElementById(owner + '-list');
+    
     const val = input.value.trim();
     if(!val) return;
 
-    // 1. DYNAMISCHE WAHL: Wohin soll der Song?
-    // Wenn aktuell DJ2 (Gunnar) aktiv ist, nimm 'dj2-list', sonst immer 'dj1-list'
-    const containerId = (currentUser === 'dj2') ? 'dj2-list' : 'dj1-list';
-    const container = document.getElementById(containerId);
-
     if (!container) {
-        console.error("Fehler: Container '" + containerId + "' nicht im DOM gefunden!");
+        console.error("Fehler: Container '" + owner + "-list' nicht gefunden!");
         return;
     }
 
     // 2. Element erstellen
     const card = document.createElement('div');
     card.className = 'song-card';
+    
+    // WICHTIG: Hier setzen wir den Besitzer, damit saveData() später weiß,
+    // in welches Firebase-Dokument der Song gehört!
+    card.setAttribute('data-owner', owner);
     
     card.innerHTML = `
         <div class="song-details" onclick="window.editSongPrompt(this)">
@@ -1471,9 +1472,10 @@ function renderBlocks() {
     
     window.setupCrossfadeEvents(card);
             
-    // 3. HIER: Prepend in den dynamisch gefundenen Container
+    // 3. Prepend in den richtigen Container
     container.prepend(card);
     
+    // Input leeren
     input.value = ""; 
     
     // 4. Speichern
@@ -1494,9 +1496,15 @@ function renderBlocks() {
     // Status für Einklappen/Ausklappen (bleibt bei deiner Logik)
     const isExpanded = userStates[currentUser].cleanMode || (!userStates[currentUser].allCollapsed) || expandedBlockIds.has(blockId);
     
-    // Das Div konfigurieren - Wichtig: ownerClass hinzugefügt
+    // Das Div konfigurieren
     div.className = `block-item ${ownerClass} ${isExpanded ? '' : 'collapsed'}`;
     div.id = blockId;
+
+    // --- HIER DIE ERGÄNZUNG FÜR SAVE-DATA ---
+    div.setAttribute('data-owner', blockOwner); 
+    div.setAttribute('data-id', blockId);
+    // ----------------------------------------
+
     div.dataset.colorIndex = colorIdx;
     div.style.background = folderColors[colorIdx];
     
