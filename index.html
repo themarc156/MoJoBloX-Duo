@@ -1593,21 +1593,25 @@ function renderBlocks() {
     });
 }
 
-    // Lauschen auf Marc
-    onSnapshot(doc(db, "mojoblox", "set1_dj1"), (docSnap) => {
-        if (docSnap.exists()) {
-            dataDJ1 = docSnap.data().blocklist || [];
-            renderCombinedUI();
-        }
-    });
+    // Lauschen auf Marc (DJ1)
+onSnapshot(doc(db, "mojoblox", "set1_dj1"), (docSnap) => {
+    if (docSnap.exists()) {
+        const data = docSnap.data();
+        // Hier stellen wir sicher, dass wir immer das Array nehmen
+        dataDJ1 = Array.isArray(data.blocklist) ? data.blocklist : [];
+        renderCombinedUI();
+    }
+});
 
-    // Lauschen auf Gunnar
-    onSnapshot(doc(db, "mojoblox", "set1_dj2"), (docSnap) => {
-        if (docSnap.exists()) {
-            dataDJ2 = docSnap.data().blocklist || [];
-            renderCombinedUI();
-        }
-    });
+// Lauschen auf Gunnar (DJ2)
+onSnapshot(doc(db, "mojoblox", "set1_dj2"), (docSnap) => {
+    if (docSnap.exists()) {
+        const data = docSnap.data();
+        // Hier stellen wir sicher, dass wir immer das Array nehmen
+        dataDJ2 = Array.isArray(data.blocklist) ? data.blocklist : [];
+        renderCombinedUI();
+    }
+});
 
     // --- 2. SAVE DATA (GEFILTERT) ---
 
@@ -2013,14 +2017,7 @@ activeData.blocklist.forEach((item) => {
         window.applyUserStatesToUI();
     }; 
 
-    onSnapshot(doc(db, "mojoblox", "set1_dj1"), (docSnap) => { 
-        if (docSnap.exists()) dataDJ1 = docSnap.data(); 
-        window.renderCurrentState(); 
-    });
-    onSnapshot(doc(db, "mojoblox", "set1_dj2"), (docSnap) => { 
-        if (docSnap.exists()) dataDJ2 = docSnap.data(); 
-        window.renderCurrentState(); 
-    });
+    
 
 
             // =================================================================
