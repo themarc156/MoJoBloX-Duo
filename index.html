@@ -732,6 +732,8 @@ window.dataDJ2 = [];
 window.lastKnownDJ1 = [];
 window.lastKnownDJ2 = [];
 
+window.isAppReady = false; // Wir sind noch nicht bereit
+
     window.toggleCrossfadeState = function(cardElement) {
         const toggleBtn = cardElement.querySelector('.crossfade-toggle-btn');
         const display = cardElement.querySelector('.crossfade-time-display');
@@ -1685,7 +1687,11 @@ onSnapshot(doc(db, "mojoblox", "set1_dj1"), (docSnap) => {
         if (data && Array.isArray(data.blocklist)) {
             window.dataDJ1 = data.blocklist;
             window.lastKnownDJ1 = data.blocklist;
-            console.log("DEBUG: DJ1 Daten global gesetzt. Länge:", window.dataDJ1.length);
+            
+            // Jetzt ist die App bereit, weil wir echte Daten haben
+            window.isAppReady = true; 
+            
+            console.log("DEBUG: DJ1 Daten geladen. Länge:", window.dataDJ1.length);
         }
         renderCombinedUI();
     } else {
@@ -1700,7 +1706,11 @@ onSnapshot(doc(db, "mojoblox", "set1_dj2"), (docSnap) => {
         if (data && Array.isArray(data.blocklist)) {
             window.dataDJ2 = data.blocklist;
             window.lastKnownDJ2 = data.blocklist;
-            console.log("DEBUG: DJ2 Daten global gesetzt. Länge:", window.dataDJ2.length);
+            
+            // Auch hier bereit schalten
+            window.isAppReady = true; 
+            
+            console.log("DEBUG: DJ2 Daten geladen. Länge:", window.dataDJ2.length);
         }
         renderCombinedUI();
     }
@@ -1709,25 +1719,35 @@ onSnapshot(doc(db, "mojoblox", "set1_dj2"), (docSnap) => {
     // --- 2. SAVE DATA (GEFILTERT) ---
 
 window.saveData = async () => {
+    // 1. SICHERHEIT: Wenn die App noch lädt, darf nicht gespeichert werden!
+    // (Falls isAppReady noch nicht definiert ist, greift '!' ebenfalls)
+    if (!window.isAppReady) {
+        console.warn("SICHERHEIT: Speichern abgebrochen: App ist noch nicht bereit.");
+        return;
+    }
+
     if (currentUser === 'diff') return;
     const container = document.getElementById('blocklist-container');
     if (!container) return;
 
-    // 1. Wir erstellen ein schnelles Nachschlagewerk (Map), 
-    // um die vollen Objektdaten anhand der ID zu finden.
-    const allItems = [...(dataDJ1 || []), ...(dataDJ2 || [])];
+    // 2. DOM lesen
+    const elements = container.querySelectorAll('.block-item');
+    
+    // 3. SICHERHEIT: Wenn der Container leer ist, keinesfalls speichern!
+    if (elements.length === 0) {
+        console.warn("SICHERHEIT: Container ist leer. Speichern abgebrochen, um Datenverlust zu vermeiden!");
+        return; 
+    }
+
+    const allItems = [...(window.dataDJ1 || []), ...(window.dataDJ2 || [])];
     const itemMap = new Map(allItems.map(i => [i.id, i]));
 
-    // 2. Wir schauen uns das DOM an (den aktuellen, sortierten Zustand)
-    const elements = container.querySelectorAll('.block-item');
     const myFilteredList = [];
 
-    // 3. Wir gehen nur durch die Elemente, die DIR gehören
     elements.forEach(el => {
         const owner = el.getAttribute('data-owner');
         const id = el.getAttribute('data-id');
 
-        // Wir nehmen nur die Items, die DU erstellt hast
         if (owner === currentUser) {
             const originalItem = itemMap.get(id);
             if (originalItem) {
@@ -1736,7 +1756,6 @@ window.saveData = async () => {
         }
     });
 
-    // 4. In Firebase speichern
     const docName = currentUser === 'dj1' ? "set1_dj1" : "set1_dj2";
     
     try {
@@ -1744,7 +1763,7 @@ window.saveData = async () => {
             blocklist: myFilteredList,
             timestamp: Date.now()
         });
-        console.log(`Daten für ${currentUser} wurden in der neuen Reihenfolge gespeichert.`);
+        console.log(`Daten für ${currentUser} wurden erfolgreich in Firebase gespeichert.`);
     } catch (e) {
         console.error("Fehler beim Speichern:", e);
     }
