@@ -1242,29 +1242,29 @@ function renderBlocks() {
     if (currentUser === 'diff') return;
 
     blocklistMasterSortable = new Sortable(el, {
-        group: 'shared-list', 
-        animation: 150, 
-        handle: '.drag-handle, .song-details', 
-        ghostClass: 'sortable-ghost',
-        disabled: userStates[currentUser].isLocked, 
-        onEnd: () => {
-            window.saveData(); // Speichert die neue Reihenfolge für alle
-        },
-        onMove: function (evt) {
-            // Prüfen: Was wird gerade gezogen?
-            const isDraggingBlock = evt.dragged.classList.contains('block-item');
-            // Prüfen: Wohin soll es geschoben werden? (In die Liste eines anderen Blocks?)
-            const isTargetNestedList = evt.to.classList.contains('block-sortable-list');
+    group: 'shared-list', 
+    animation: 150, 
+    handle: '.drag-handle, .song-details', 
+    ghostClass: 'sortable-ghost',
+    disabled: userStates[currentUser].isLocked, 
+    onEnd: function(evt) {
+        // WICHTIG: Besitzer im DOM sofort aktualisieren!
+        // Sobald du den Song loslässt, gehört er dir (bzw. dem aktuellen User).
+        evt.item.setAttribute('data-owner', currentUser);
+        
+        // Erst danach speichern
+        window.saveData(); 
+    },
+    onMove: function (evt) {
+        const isDraggingBlock = evt.dragged.classList.contains('block-item');
+        const targetIsNested = evt.to.classList.contains('block-sortable-list');
 
-            // Regel: Ein ganzer Block darf NIEMALS in die Songliste eines anderen Blocks geschoben werden.
-            if (isDraggingBlock && isTargetNestedList) {
-                return false;
-            }
-            
-            // Einzelsongs dürfen überall hin (zwischen Blöcke oder in Blöcke hinein),
-            // außer du willst auch das verhindern. Standardmäßig ist dies nun erlaubt.
+        // Verhindert, dass Blöcke in andere Blöcke geschoben werden
+        if (isDraggingBlock && targetIsNested) {
+            return false;
         }
-    });
+    }
+});
 }
 
     window.toggleAllBlocks = function() {
