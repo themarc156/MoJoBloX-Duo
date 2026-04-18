@@ -637,6 +637,16 @@ header {
     padding: 4px;
 }
 
+.locked-container {
+    border: 1px solid #ff4444; /* Ein roter Rahmen, wenn gesperrt */
+    background: rgba(255, 0, 0, 0.05); /* Dezenter roter Hintergrund */
+    pointer-events: none; /* Verhindert Klicks auf die Liste */
+}
+/* Aber die Toolbar soll natürlich bedienbar bleiben! */
+.locked-container .dj-toolbar {
+    pointer-events: auto;
+}
+
 /* Mobile Ansicht: Auf dem Handy alles untereinander */
 @media (max-width: 768px) {
     #blocklist-container {
@@ -652,23 +662,8 @@ header {
 <body>
 
 <header>
-    <div class="header-left-group">
-        <div class="header-btn" id="header-btn-left" onclick="headerActionLeft()" title="Aktion links">✏️</div>
-        <div class="header-btn" id="header-btn-save" onclick="window.toggleDropdown()" title="Set speichern oder laden">💾</div>
-        
-        <div class="dropdown-menu" id="save-dropdown">
-            <div class="dropdown-item action-save" onclick="saveCurrentAsTemplate()">📥 Aktuelles Set speichern</div>
-            <div id="saved-lists-container"></div>
-        </div>
-    </div>
-
-    <div class="header-title" onclick="toggleLock()">
-        MoJoBloX Duo<span id="lock-icon">🔒</span>
-    </div>
-    
-    <div class="header-right-group">
-        <div class="header-btn" id="header-btn-eye" onclick="toggleCleanMode()" title="Ansichten filtern">👁️</div>
-        <div class="header-btn" id="header-btn-right" onclick="headerActionRight()" title="Auf-/Zuklappen">↕️</div>
+    <div class="header-title" style="text-align: center; width: 100%; cursor: default; font-size: 1.2rem; padding: 10px 0;">
+        MoJoBloX Duo <span style="font-size: 0.8em; opacity: 0.6; margin-left: 10px;">(???)</span>
     </div>
 </header>
 
@@ -679,31 +674,44 @@ header {
     <div id="main-content-wrapper" style="display: flex; gap: 20px; width: 100%; align-items: flex-start;">
     
     <div id="dj1-container" class="split-half">
-        <div class="controls-wrapper" style="display: flex; flex-direction: column; gap: 10px;">
-            <button class="btn-add-block" onclick="addNewBlockPrompt('dj1')">+ NEUER BLOCK / ORDNER</button>
+        <div class="dj-toolbar">
+            <div class="header-btn" onclick="headerActionLeft('dj1')" title="Editieren">✏️</div>
+            <div class="header-btn" onclick="window.toggleSaveDropdown('dj1')" title="Speichern">💾</div>
+            <div class="header-btn" onclick="toggleCleanMode('dj1')" title="Ansicht">👁️</div>
+            <div class="header-btn" onclick="toggleExpandAll('dj1')" title="Klappen">↕️</div>
+            <div class="header-btn" onclick="toggleLock('dj1')" title="Sperren">🔒</div>
+        </div>
+
+        <div class="controls-wrapper">
+            <button class="btn-add-block" onclick="addNewBlockPrompt('dj1')">+ NEUER BLOCK</button>
             <div class="input-section" style="display: flex; gap: 5px;">
                 <div class="btn-folder-select" onclick="window.triggerFolderSelection('dj1')">📁</div>
-                <input type="text" id="input-dj1" placeholder="Song für Marc..." style="flex-grow: 1;" onkeydown="if(event.key==='Enter') addSongToTopList('dj1')">
+                <input type="text" id="input-dj1" placeholder="Song für Marc..." onkeydown="if(event.key==='Enter') addSongToTopList('dj1')">
                 <button class="btn-plus" onclick="addSongToTopList('dj1')">+</button>
             </div>
         </div>
-        
-        <div id="dj1-list" class="drop-zone" style="margin-top: 10px;"></div>
+        <div id="dj1-list" class="drop-zone"></div>
     </div>
 
     <div id="dj2-container" class="split-half">
-        <div class="controls-wrapper" style="display: flex; flex-direction: column; gap: 10px;">
-            <button class="btn-add-block" onclick="addNewBlockPrompt('dj2')">+ NEUER BLOCK / ORDNER</button>
+        <div class="dj-toolbar">
+            <div class="header-btn" onclick="headerActionLeft('dj2')" title="Editieren">✏️</div>
+            <div class="header-btn" onclick="window.toggleSaveDropdown('dj2')" title="Speichern">💾</div>
+            <div class="header-btn" onclick="toggleCleanMode('dj2')" title="Ansicht">👁️</div>
+            <div class="header-btn" onclick="toggleExpandAll('dj2')" title="Klappen">↕️</div>
+            <div class="header-btn" onclick="toggleLock('dj2')" title="Sperren">🔒</div>
+        </div>
+
+        <div class="controls-wrapper">
+            <button class="btn-add-block" onclick="addNewBlockPrompt('dj2')">+ NEUER BLOCK</button>
             <div class="input-section" style="display: flex; gap: 5px;">
                 <div class="btn-folder-select" onclick="window.triggerFolderSelection('dj2')">📁</div>
-                <input type="text" id="input-dj2" placeholder="Song für Gunnar..." style="flex-grow: 1;" onkeydown="if(event.key==='Enter') addSongToTopList('dj2')">
+                <input type="text" id="input-dj2" placeholder="Song für Gunnar..." onkeydown="if(event.key==='Enter') addSongToTopList('dj2')">
                 <button class="btn-plus" onclick="addSongToTopList('dj2')">+</button>
             </div>
         </div>
-
-        <div id="dj2-list" class="drop-zone" style="margin-top: 10px;"></div>
+        <div id="dj2-list" class="drop-zone"></div>
     </div>
-
 </div>
 </div>
 
@@ -1175,52 +1183,108 @@ function renderBlocks() {
         }
     };
 
-    window.toggleCleanMode = function() {
-        if (currentUser === 'diff') {
-            if (currentDiffFilter === 'all') currentDiffFilter = 'blocks';
-            else if (currentDiffFilter === 'blocks') currentDiffFilter = 'singles';
-            else currentDiffFilter = 'all';
-            
-            window.applyUserStatesToUI();
-            if (window.renderCurrentState) window.renderCurrentState();
-            return; 
-        } 
+    window.toggleCleanMode = function(owner) {
+    // 1. Spezialfall: Diff-Ansicht (Bleibt global)
+    if (owner === 'diff') {
+        if (currentDiffFilter === 'all') currentDiffFilter = 'blocks';
+        else if (currentDiffFilter === 'blocks') currentDiffFilter = 'singles';
+        else currentDiffFilter = 'all';
         
-        userStates[currentUser].cleanMode = !userStates[currentUser].cleanMode;
-        const eyeBtn = document.getElementById('header-btn-eye');
-        if (userStates[currentUser].cleanMode) {
-            document.body.classList.add('clean-mode');
-            eyeBtn.style.background = "var(--accent-color)";
-            eyeBtn.style.color = "white";
-            document.querySelectorAll('.block-item').forEach(block => { block.classList.remove('collapsed'); });
-        } else {
-            document.body.classList.remove('clean-mode');
-            eyeBtn.style.background = "#333";
-            eyeBtn.style.color = "inherit";
-            if (window.renderCurrentState) window.renderCurrentState();
-        }
-    };
-
-    window.toggleLock = function() {
-    // 1. Status umschalten
-    userStates[currentUser].isLocked = !userStates[currentUser].isLocked;
+        window.applyUserStatesToUI();
+        if (window.renderCurrentState) window.renderCurrentState();
+        return; 
+    } 
     
-    // 2. Visuelles Feedback (Lock-Icon etc.)
-    window.applyUserStatesToUI();
+    // 2. Normaler Modus für Marc (dj1) oder Gunnar (dj2)
+    userStates[owner].cleanMode = !userStates[owner].cleanMode;
     
-    // 3. Neu rendern (Hier wird der Container gelöscht und neu gefüllt)
-    if (typeof window.renderCombinedUI === 'function') {
-        window.renderCombinedUI();
+    // Wir suchen den Button innerhalb des Containers, nicht mehr global im Header
+    const container = document.getElementById(owner + '-container');
+    const eyeBtn = container.querySelector('[title="Ansicht"]');
+    
+    if (userStates[owner].cleanMode) {
+        // Lokale Aktivierung: Klasse nur am Container setzen
+        container.classList.add('clean-mode');
+        eyeBtn.style.background = "var(--accent-color)";
+        eyeBtn.style.color = "white";
+        
+        // Blöcke lokal aufklappen
+        container.querySelectorAll('.block-item').forEach(block => { 
+            block.classList.remove('collapsed'); 
+        });
+    } else {
+        // Lokale Deaktivierung
+        container.classList.remove('clean-mode');
+        eyeBtn.style.background = "rgba(255, 255, 255, 0.05)"; // Dein Toolbar-Hintergrund
+        eyeBtn.style.color = "inherit";
+        
+        // Nur diesen Teil neu rendern
+        window.renderDJList(owner); 
     }
-
-    // 4. WICHTIG: Das DOM muss erst fertig geladen sein, bevor Sortable startet
-    setTimeout(() => {
-        if (typeof window.initBlocklistMasterSortable === 'function') {
-            window.initBlocklistMasterSortable();
-        }
-        console.log("UI entsperrt & Sortable neu initialisiert.");
-    }, 100); // 100ms Verzögerung sorgt für Stabilität
+    
+    window.saveData();
 };
+
+window.renderDJList = function(owner) {
+    const listContainer = document.getElementById(owner + '-list');
+    // 1. Liste leeren
+    listContainer.innerHTML = '';
+    
+    // 2. Deine Daten für diesen speziellen Owner holen
+    // Angenommen, du hast eine Funktion, die nur die Blöcke für einen User filtert:
+    const blocks = window.getBlocksForOwner(owner); 
+    
+    // 3. Blöcke für diesen Owner einfügen
+    blocks.forEach(block => {
+        window.addBlockToBlocklistUI(block.title, block.songs, block.color, block.id, owner);
+    });
+};
+
+    window.toggleLock = function(owner) {
+    // 1. Status nur für diesen Owner umschalten
+    userStates[owner].isLocked = !userStates[owner].isLocked;
+    
+    // 2. Visuelles Feedback (Button/Icon direkt im Container aktualisieren)
+    const container = document.getElementById(owner + '-container');
+    const lockBtn = container.querySelector('[title="Sperren"]');
+    lockBtn.innerText = userStates[owner].isLocked ? '🔓' : '🔒'; // Icon wechseln
+    
+    // 3. SortableJS direkt "live" deaktivieren/aktivieren
+    // Das ist viel schneller als ein komplettes Neu-Rendern!
+    const lists = container.querySelectorAll('.block-sortable-list');
+    lists.forEach(listEl => {
+        const sortable = Sortable.get(listEl);
+        if (sortable) {
+            sortable.option('disabled', userStates[owner].isLocked);
+        }
+    });
+
+    console.log(`${owner} ist jetzt ${userStates[owner].isLocked ? 'gesperrt' : 'entsperrt'}.`);
+    
+    // Optional: Speichern, damit der Status bleibt
+    window.saveData(); 
+};
+
+window.syncUIState = function(owner) {
+    const isLocked = userStates[owner].isLocked;
+    
+    // Icon im Button aktualisieren
+    const container = document.getElementById(owner + '-container');
+    const lockBtn = container.querySelector('[title="Sperren"]');
+    if (lockBtn) lockBtn.innerText = isLocked ? '🔓' : '🔒';
+    
+    // Sortable Status setzen
+    const listEl = document.getElementById(owner + '-list');
+    const sortable = Sortable.get(listEl);
+    if (sortable) sortable.option('disabled', isLocked);
+    
+    // OPTIONAL: Visuelles Feedback (CSS-Klasse für die ganze Liste)
+    container.classList.toggle('locked-container', isLocked);
+};
+
+// Aufruf beim Start:
+// window.syncUIState('dj1');
+// window.syncUIState('dj2');
 
     window.applyUserStatesToUI = function() {
         const state = userStates[currentUser];
