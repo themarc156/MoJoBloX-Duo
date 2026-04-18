@@ -499,7 +499,18 @@ header {
 .split-half {
     flex: 1;
     display: flex;
-    align-items: center;
+    flex-direction: column; /* <-- DAS ist der entscheidende Befehl! */
+    gap: 10px;              /* Gibt den Elementen etwas Luft zum Atmen */
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+/* Damit die Drop-Zones (Listen) Platz haben */
+.drop-zone {
+    flex-grow: 1;           /* Nimmt den restlichen Platz ein */
+    min-height: 300px;      /* Damit man immer was sieht */
+    border: 1px dashed #444; /* Nur zur Kontrolle, kannst du später entfernen */
+    margin-top: 10px;
 }
 
 /* Linker Button: Neuer Block */
@@ -661,39 +672,39 @@ header {
 
     <div id="takeover-infozone" class="drop-target-area" style="display:none; border-style: solid;">👉 TIPPE AUF DAS (+), UM ES ZU ÜBERNEHMEN</div>
 
-    <div id="main-content-wrapper" style="display: flex; gap: 20px; width: 100%;">
+    <div id="main-content-wrapper" style="display: flex; gap: 20px; width: 100%; align-items: flex-start;">
+    
+    <div id="dj1-container" class="split-half">
+        <h3 style="text-align: center; color: #555;">Marc's Songs</h3>
         
-        <div id="dj1-container" class="split-half" style="min-height: 200px; flex: 1;">
-            <h3 style="text-align: center; color: #555;">Marc's Songs</h3>
-            
-            <div class="controls-wrapper" style="margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px;">
-                <button class="btn-add-block" onclick="addNewBlockPrompt('dj1')">+ NEUER BLOCK / ORDNER</button>
-                <div class="input-section" style="display: flex; gap: 5px;">
-                    <div class="btn-folder-select" onclick="window.triggerFolderSelection('dj1')">📁</div>
-                    <input type="text" id="input-dj1" placeholder="Song für Marc..." onkeydown="if(event.key==='Enter') addSongToTopList('dj1')">
-                    <button class="btn-plus" onclick="addSongToTopList('dj1')">+</button>
-                </div>
+        <div class="controls-wrapper" style="display: flex; flex-direction: column; gap: 10px;">
+            <button class="btn-add-block" onclick="addNewBlockPrompt('dj1')">+ NEUER BLOCK / ORDNER</button>
+            <div class="input-section" style="display: flex; gap: 5px;">
+                <div class="btn-folder-select" onclick="window.triggerFolderSelection('dj1')">📁</div>
+                <input type="text" id="input-dj1" placeholder="Song für Marc..." style="flex-grow: 1;" onkeydown="if(event.key==='Enter') addSongToTopList('dj1')">
+                <button class="btn-plus" onclick="addSongToTopList('dj1')">+</button>
             </div>
-            
-            <div id="dj1-list" class="drop-zone"></div>
         </div>
-
-        <div id="dj2-container" class="split-half" style="min-height: 200px; flex: 1;">
-            <h3 style="text-align: center; color: #555;">Gunnar's Songs</h3>
-            
-            <div class="controls-wrapper" style="margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px;">
-                <button class="btn-add-block" onclick="addNewBlockPrompt('dj2')">+ NEUER BLOCK / ORDNER</button>
-                <div class="input-section" style="display: flex; gap: 5px;">
-                    <div class="btn-folder-select" onclick="window.triggerFolderSelection('dj2')">📁</div>
-                    <input type="text" id="input-dj2" placeholder="Song für Gunnar..." onkeydown="if(event.key==='Enter') addSongToTopList('dj2')">
-                    <button class="btn-plus" onclick="addSongToTopList('dj2')">+</button>
-                </div>
-            </div>
-
-            <div id="dj2-list" class="drop-zone"></div>
-        </div>
-
+        
+        <div id="dj1-list" class="drop-zone"></div>
     </div>
+
+    <div id="dj2-container" class="split-half">
+        <h3 style="text-align: center; color: #555;">Gunnar's Songs</h3>
+        
+        <div class="controls-wrapper" style="display: flex; flex-direction: column; gap: 10px;">
+            <button class="btn-add-block" onclick="addNewBlockPrompt('dj2')">+ NEUER BLOCK / ORDNER</button>
+            <div class="input-section" style="display: flex; gap: 5px;">
+                <div class="btn-folder-select" onclick="window.triggerFolderSelection('dj2')">📁</div>
+                <input type="text" id="input-dj2" placeholder="Song für Gunnar..." style="flex-grow: 1;" onkeydown="if(event.key==='Enter') addSongToTopList('dj2')">
+                <button class="btn-plus" onclick="addSongToTopList('dj2')">+</button>
+            </div>
+        </div>
+
+        <div id="dj2-list" class="drop-zone"></div>
+    </div>
+
+</div>
 </div>
 
 <div id="crossfade-popup" class="crossfade-popup-slider">
