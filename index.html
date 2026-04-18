@@ -1562,10 +1562,14 @@ function renderBlocks() {
     const bContainer = document.getElementById('blocklist-container');
     if (!bContainer) return;
 
-    console.log("DJ1 count:", (dataDJ1 || []).length, "DJ2 count:", (dataDJ2 || []).length);
+    // --- SICHERHEITS-LOGIK ---
+    // Wenn dataDJ1 Daten hat, nimm sie. Wenn nicht, nimm das Backup aus dem Cache.
+    const list1 = (Array.isArray(dataDJ1) && dataDJ1.length > 0) ? dataDJ1 : (window.lastKnownDJ1 || []);
+    const list2 = (Array.isArray(dataDJ2) && dataDJ2.length > 0) ? dataDJ2 : (window.lastKnownDJ2 || []);
 
-    // 1. Container leeren, um UI-Konflikte zu vermeiden
-    bContainer.innerHTML = ''; 
+    console.log("RENDER DEBUG: DJ1 nutzt", list1.length, "Elemente, DJ2 nutzt", list2.length, "Elemente.");
+
+    bContainer.innerHTML = '';
     const renderedFingerprints = new Set();
 
     // 2. Daten sicher abrufen
@@ -1646,12 +1650,11 @@ onSnapshot(doc(db, "mojoblox", "set1_dj1"), (docSnap) => {
     if (docSnap.exists()) {
         const data = docSnap.data();
         
-        // WICHTIG: Nur überschreiben, wenn blocklist existiert und ein Array ist
+        // NEU: Nur überschreiben, wenn blocklist WIRKLICH existiert
         if (data && Array.isArray(data.blocklist)) {
             dataDJ1 = data.blocklist;
-            window.lastKnownDJ1 = data.blocklist; // Cache für Notfälle
+            window.lastKnownDJ1 = data.blocklist; // Backup im Cache
         }
-        // Wenn das Feld fehlt oder leer ist -> TU NICHTS. dataDJ1 behält den alten Wert!
         
         renderCombinedUI();
     }
@@ -1662,10 +1665,10 @@ onSnapshot(doc(db, "mojoblox", "set1_dj2"), (docSnap) => {
     if (docSnap.exists()) {
         const data = docSnap.data();
         
-        // WICHTIG: Nur überschreiben, wenn blocklist existiert und ein Array ist
+        // NEU: Nur überschreiben, wenn blocklist WIRKLICH existiert
         if (data && Array.isArray(data.blocklist)) {
             dataDJ2 = data.blocklist;
-            window.lastKnownDJ2 = data.blocklist; // Cache für Notfälle
+            window.lastKnownDJ2 = data.blocklist; // Backup im Cache
         }
         
         renderCombinedUI();
