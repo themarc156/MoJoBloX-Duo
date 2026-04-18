@@ -1573,7 +1573,7 @@ function renderBlocks() {
             // 'block-item' ist wichtig für Sortable!
             singleEl.className = 'block-item single-song-card'; 
             singleEl.setAttribute('data-id', item.id);
-            
+            singleEl.setAttribute('data-owner', item.createdBy || 'dj1');
             // Wir bauen das HTML so, dass es ein Handle hat und wie eine kompakte Karte aussieht
             singleEl.innerHTML = `
                 <div class="block-header" style="display: flex; align-items: center; gap: 10px; padding: 10px; background: #2a2a2a; border-radius: 8px; border-left: 4px solid #ffcc00;">
@@ -1611,31 +1611,47 @@ function renderBlocks() {
 
     // --- 2. SAVE DATA (GEFILTERT) ---
 
-    window.saveData = async () => {
-        if (currentUser === 'diff') return;
-        const container = document.getElementById('blocklist-container');
-        if(!container || container.innerText.includes('Lade Daten')) return;
-        
-        const fullData = window.buildCurrentData();
-        
-        // NUR EIGENE BLÖCKE SPEICHERN
-        const filteredBlocklist = fullData.blocklist.filter(item => {
-            if (item.type === 'block') {
-                return item.createdBy === currentUser;
-            }
-            return true; 
-        });
+window.saveData = async () => {
+    if (currentUser === 'diff') return;
+    const container = document.getElementById('blocklist-container');
+    if (!container) return;
 
-        const docName = currentUser === 'dj1' ? "set1_dj1" : "set1_dj2";
-        
-        try { 
-            await setDoc(doc(db, "mojoblox", docName), {
-                blocklist: filteredBlocklist,
-                timestamp: Date.now()
-            }); 
-            console.log(`Daten für ${currentUser} synchronisiert.`);
-        } catch (e) { console.error("Fehler:", e); }
-    };
+    // 1. Wir erstellen ein schnelles Nachschlagewerk (Map), 
+    // um die vollen Objektdaten anhand der ID zu finden.
+    const allItems = [...(dataDJ1 || []), ...(dataDJ2 || [])];
+    const itemMap = new Map(allItems.map(i => [i.id, i]));
+
+    // 2. Wir schauen uns das DOM an (den aktuellen, sortierten Zustand)
+    const elements = container.querySelectorAll('.block-item');
+    const myFilteredList = [];
+
+    // 3. Wir gehen nur durch die Elemente, die DIR gehören
+    elements.forEach(el => {
+        const owner = el.getAttribute('data-owner');
+        const id = el.getAttribute('data-id');
+
+        // Wir nehmen nur die Items, die DU erstellt hast
+        if (owner === currentUser) {
+            const originalItem = itemMap.get(id);
+            if (originalItem) {
+                myFilteredList.push(originalItem);
+            }
+        }
+    });
+
+    // 4. In Firebase speichern
+    const docName = currentUser === 'dj1' ? "set1_dj1" : "set1_dj2";
+    
+    try {
+        await setDoc(doc(db, "mojoblox", docName), {
+            blocklist: myFilteredList,
+            timestamp: Date.now()
+        });
+        console.log(`Daten für ${currentUser} wurden in der neuen Reihenfolge gespeichert.`);
+    } catch (e) {
+        console.error("Fehler beim Speichern:", e);
+    }
+};
 
     // --- 3. BUILD DATA (MIT OWNER-ERKENNUNG) ---
 
