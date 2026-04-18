@@ -15,145 +15,696 @@
 
     <style>
         :root {
-    --bg-color: #121212;
-    --accent-color: #00adb5;
-    --lock-color: #ff4d4d;
-    --text-color: #eeeeee;
-    --card-bg: #2a2a2a;
-    --delete-red: #ff4d4d;
-    --safe-track-color: #00adb5;
-    --dj2-color: #ffaa00;
-    --success-green: #2ecc71;
-}
+            --bg-color: #121212;
+            --accent-color: #00adb5;
+            --lock-color: #ff4d4d;
+            --text-color: #eeeeee;
+            --card-bg: #2a2a2a;
+            --delete-red: #ff4d4d;
+            --f-none: #1e1e1e; --f-blue: #0a2647; --f-red: #4a0e0e; --f-green: #0e3a1a; --f-gold: #3d3000;
+            --safe-track-color: #00adb5;
+            --dj2-color: #ffaa00;
+            --success-green: #2ecc71;
+        }
 
-/* --- 1. Globales Layout --- */
-* { box-sizing: border-box; }
-body { 
-    font-family: 'Segoe UI', sans-serif; 
-    background: var(--bg-color); 
-    color: var(--text-color); 
-    margin: 0; 
-    user-select: none; 
-    touch-action: pan-y; 
-    overflow-x: hidden; 
-    padding-bottom: 70px; 
-}
-body.lock-scroll { overflow: hidden !important; touch-action: none !important; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg-color); color: var(--text-color); margin: 0; user-select: none; touch-action: pan-y; overflow-x: hidden; padding-bottom: 70px; }
 
-/* --- 2. Header & Top-Bereich --- */
-.main-header {
+        /* Wenn aktiv, wird das Scrollen der Liste verhindert */
+        body.lock-scroll {
+            overflow: hidden !important;
+            touch-action: none !important;
+        }
+
+/* Neuer Header-Container */
+header.main-header {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     align-items: center;
     background: #222;
-    padding: 0 12px;
+    padding: 10px 20px;
     border-bottom: 2px solid var(--accent-color);
+    color: var(--accent-color);
+    font-weight: bold;
+    font-size: 1rem;
     position: sticky;
     top: 0;
-    z-index: 1002;
+    z-index: 1000;
     height: 44px;
-    color: var(--accent-color);
 }
-.header-side { display: flex; align-items: center; gap: 6px; }
-.header-side.right { justify-content: flex-end; }
-.header-center { display: flex; align-items: center; gap: 10px; font-weight: bold; justify-self: center; }
+
+.header-center {
+    font-size: 1.2rem;
+    letter-spacing: 1px;
+    text-align: center;
+}
+
+.header-side {
+    font-size: 0.9rem;
+    color: #ccc;
+    font-weight: normal;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.header-side.right {
+    justify-content: flex-end;
+    text-align: right;
+}
+
+/* Falls du die Buttons (Edit etc.) behalten willst, 
+   kannst du sie einfach in die header-side divs legen */
 .header-btn {
-    font-size: 16px; cursor: pointer; background: #333; border-radius: 5px;
-    border: 1px solid var(--accent-color); display: flex; align-items: center;
-    justify-content: center; width: 28px; height: 28px; color: white;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 4px;
+    background: #333;
+    border-radius: 5px;
+    border: 1px solid var(--accent-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    color: white;
 }
-.lock-btn { border-color: var(--lock-color); color: var(--lock-color); }
-body.edit-mode #header-btn-left { background: var(--accent-color); color: white; }
 
-/* --- 3. Aktionen & Input-Bereich --- */
-.split-action-row { display: flex; gap: 8px; padding: 2px 10px; background: #121212; align-items: center; height: 48px; }
-.input-section { display: flex; gap: 8px; margin-bottom: 10px; position: sticky; top: 44px; z-index: 1001; background: var(--bg-color); padding: 8px 0; }
+        body.edit-mode #header-btn-left { background: var(--accent-color); color: white; }
 
-.btn-add-block { 
-    background: #1e1e1e; color: var(--accent-color); border: 1px solid var(--accent-color);
-    padding: 10px; border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        .page { padding: 12px; } 
+        
+        .input-section { 
+            display: flex; 
+            gap: 8px; 
+            margin-bottom: 10px; 
+            position: sticky; 
+            top: 44px; 
+            z-index: 1001; 
+            background: var(--bg-color); 
+            padding: 8px 0; 
+            align-items: center;
+        }
+        
+        input[type="text"] { padding: 10px; border-radius: 6px; border: 1px solid #444; background: #252525; color: white; outline: none; font-size: 16px; flex-grow: 1; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .btn-plus { background: var(--accent-color); color: white; border: none; width: 45px; height: 40px; border-radius: 6px; font-weight: bold; font-size: 22px; cursor: pointer; }
+
+        .btn-folder-select {
+            background: #252525;
+            color: #aaa;
+            border: 1px solid #444;
+            width: 45px;
+            height: 40px;
+            border-radius: 6px;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transition: all 0.2s;
+        }
+        .btn-folder-select.active {
+            border-color: var(--success-green);
+            color: var(--success-green);
+            background: #1a2e22;
+        }
+
+        .btn-add-block { 
+            background: #1e1e1e; 
+            color: var(--accent-color); 
+            border: 1px solid var(--accent-color); 
+            padding: 10px; 
+            border-radius: 8px; 
+            width: 100%; 
+            font-weight: bold; 
+            margin-bottom: 15px; 
+            cursor: pointer;
+            position: sticky; 
+            top: 92px; 
+            z-index: 1000;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .song-card { 
+    background: var(--card-bg); 
+    margin-bottom: 2px; /* Von 4px auf 2px reduziert */
+    padding: 4px 10px;  /* Deutlich weniger Padding (oben/unten 4px) */
+    border-radius: 4px; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    font-size: 0.85rem; /* Etwas kleinere Grundschrift */
+    border: 1px solid rgba(255,255,255,0.05); 
+    cursor: grab; 
+    min-height: 28px;   /* Flachere Mindesthöhe */
+    position: relative; 
 }
+        .song-card:active { cursor: grabbing; }
+
+.song-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0px; /* Abstand zwischen Titel und Interpret entfernt */
+    flex-grow: 1;
+    overflow: hidden;
+    padding-right: 10px; 
+}
+
+        .song-title-text {
+    font-weight: bold;
+    font-size: 0.9rem;
+    line-height: 1.2;
+}
+
+.song-artist-text {
+    font-size: 0.7rem; /* Interpret noch ein Stück kleiner */
+    color: #999;
+    line-height: 1.1;
+}
+        body.edit-mode .song-details { cursor: pointer; }
+        body.edit-mode .song-details:hover .song-title-text { text-decoration: underline dotted var(--accent-color); }
+
+        body.user-dj1 .song-card.match-found { border: 1.5px solid var(--safe-track-color) !important; box-shadow: 0 0 5px rgba(0, 173, 181, 0.3); }
+        body.user-dj2 .song-card.match-found { border: 1.5px solid var(--dj2-color) !important; box-shadow: 0 0 5px rgba(255, 170, 0, 0.3); }
+        
+        .color-dot { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; cursor: pointer; }
+        .sortable-ghost { opacity: 0.1; background: var(--accent-color) !important; }
+        
+        #blocklist-container > .song-card { border-left: 4px solid var(--accent-color); }
+        body.user-dj2 #blocklist-container > .song-card { border-left: 4px solid var(--dj2-color) !important; }
+
+        .block-item { margin-bottom: 4px; position: relative; border-radius: 8px; overflow: hidden; }
+        .block-item.collapsed { background: #1a1a1a !important; }
+        .block-item.collapsed .block-header strong { text-decoration: none !important; }
+        .block-header { padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; }
+        .block-header strong { font-size: 1rem; flex-grow: 1; cursor: pointer; padding: 3px; }
+        body.edit-mode .block-header strong { cursor: cell; text-decoration: underline dotted var(--accent-color); }
+
+        .block-song-count { font-size: 0.85rem; opacity: 0.7; margin-left: 4px; font-weight: normal; }
+        .block-content { padding: 8px; padding-bottom: 4px; } 
+        .block-item.collapsed .block-content { display: none; }
+        .block-item:not(.collapsed) .block-content { display: block; }
+
+        .collapse-icon { transition: transform 0.3s; margin-right: 12px; font-size: 1.1rem; cursor: pointer; padding: 3px; transform: rotate(-90deg); }
+        .block-item:not(.collapsed) .collapse-icon { transform: rotate(0deg); }
+        .block-sortable-list { min-height: 20px; }
+
+        .delete-btn { 
+            display: none !important; 
+            color: var(--delete-red); 
+            cursor: pointer; 
+            font-weight: bold; 
+            font-size: 24px; 
+            padding: 10px 15px; 
+            margin: -10px -10px -10px auto; 
+            pointer-events: auto !important; 
+        }
+        body.edit-mode .delete-btn { display: inline-block !important; }
+        
+        .color-dot { display: none !important; }
+        body.edit-mode .color-dot { display: block !important; }
+
+        .play-preview-btn {
+            display: inline-block;
+            color: var(--accent-color);
+            cursor: pointer;
+            font-size: 16px;
+            padding: 8px 12px;
+            margin: -10px auto -10px 5px;
+            border-radius: 4px;
+            transition: background 0.2s;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .play-preview-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .play-preview-btn.playing {
+            color: var(--success-green);
+        }
+        body.edit-mode .play-preview-btn { display: none !important; }
+        body.user-diff .play-preview-btn { display: none !important; }
+
+        .drag-handle { cursor: grab; font-size: 18px; color: #666; padding: 5px 8px; margin-left: 12px; }
+        .drag-handle:active { cursor: grabbing; }
+
+        footer {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: #1a1a1a; border-top: 1px solid #333;
+            display: flex; justify-content: space-around; padding: 10px; z-index: 1003;
+        }
+        .footer-btn {
+            background: #252525; color: #aaa; border: 1px solid #444; padding: 6px 12px;
+            border-radius: 15px; font-size: 0.9rem; cursor: pointer; font-weight: bold;
+            transition: all 0.2s; min-width: 80px; text-align: center;
+            display: flex; flex-direction: column; align-items: center; gap: 2px;
+        }
+        .footer-btn.active { background: var(--accent-color); color: white; border-color: var(--accent-color); }
+        .btn-counter { font-size: 0.7rem; opacity: 0.7; font-weight: normal; }
+        .footer-btn.active .btn-counter { opacity: 0.9; }
+        
+        .safe-tag { 
+            color: #fff; 
+            font-size: 0.85rem; 
+            font-weight: bold; 
+            position: absolute;
+            right: 155px; 
+            top: 50%;
+            transform: translateY(-50%);
+            white-space: nowrap;
+        }
+
+        body.user-dj1 .safe-tag { background: var(--safe-track-color); }
+        body.user-dj2 .safe-tag { background: var(--dj2-color); color: #121212; }
+
+        .drop-target-area {
+            background: #1e1e1e; border: 2px dashed var(--accent-color); border-radius: 8px;
+            padding: 15px; text-align: center; color: var(--accent-color); font-weight: bold; margin-bottom: 15px;
+            transition: all 0.3s; position: sticky; top: 48px; z-index: 1001; box-shadow: 0 4px 10px rgba(0,0,0,0.5); 
+        }
+        
+        .song-type-icon { margin-left: auto; margin-right: 10px; opacity: 0.6; font-size: 0.9rem; }
+        body.user-diff .song-card { cursor: default !important; user-select: none !important; -webkit-user-drag: none !important; }
+
+        .diff-section-header { display: flex; align-items: center; opacity: 0.7; margin-top: 15px; margin-bottom: 5px; font-size: 0.9rem; cursor: pointer; padding: 4px 0; }
+        .diff-section-header .collapse-icon { margin-right: 6px; }
+        .diff-section-content { display: block; }
+        .diff-section-content.collapsed { display: none; }
+
+        .diff-takeover-btn {
+            background: #333; color: var(--accent-color); border: 1px solid var(--accent-color);
+            border-radius: 4px; padding: 4px 8px; font-size: 0.8rem; font-weight: bold;
+            cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center;
+        }
+        .diff-takeover-btn:active { transform: scale(0.95); background: var(--accent-color); color: #fff; }
+
+        #pdf-template { display: none; color: #000; background: #fff; padding: 15px; font-family: Arial, sans-serif; }
+        #pdf-template h1 { font-size: 20px; border-bottom: 2px solid #000; padding-bottom: 5px; margin-bottom: 10px; }
+        #pdf-template h2 { font-size: 15px; margin-top: 15px; border-bottom: 1px solid #999; padding-bottom: 3px; margin-bottom: 8px; color: #333; }
+        #pdf-template h3 { font-size: 12px; margin-top: 10px; margin-bottom: 4px; color: #555; text-transform: uppercase; }
+        #pdf-template .pdf-page { page-break-before: always; }
+        #pdf-template .pdf-page:first-child { page-break-before: auto; }
+        
+        .pdf-auto-columns { columns: 2; column-gap: 30px; column-fill: auto; height: 240mm; orphans: 1; widows: 1; }
+        .pdf-columns-container { display: grid; grid-template-columns: 1fr 1fr; column-gap: 30px; align-items: start; }
+        .pdf-song-item { padding: 3px 0; border-bottom: 1px solid #eee; font-size: 12px; color: #333; }
+        .pdf-block-title { font-weight: bold; margin-top: 8px; font-size: 13px; text-decoration: underline; color: #000; }
+        .pdf-keep-together { break-inside: avoid-column; page-break-inside: avoid; margin-bottom: 10px; }
+
+        body.clean-mode .block-header { display: none !important; }
+        body.clean-mode .block-item { background: transparent !important; margin-bottom: 0px; border-radius: 0; overflow: visible; border-bottom: 1px dashed #444; padding-bottom: 6px; margin-top: 6px; }
+        body.clean-mode .block-content { padding: 0; }
+        body.clean-mode .block-item:last-child { border-bottom: none; }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 35px;
+            left: 0;
+            background: #252525;
+            border: 1px solid var(--accent-color);
+            border-radius: 6px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            z-index: 2000;
+            min-width: 190px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .dropdown-menu.active { display: block; }
+        .dropdown-item {
+            padding: 10px 15px;
+            font-size: 0.9rem;
+            color: #eee;
+            cursor: pointer;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .dropdown-item:hover { background: #333; }
+        .dropdown-item.action-save { color: var(--accent-color); font-weight: bold; }
+        .dropdown-item .delete-saved { color: var(--delete-red); font-size: 1.2rem; padding: 0 5px; }
+        .dropdown-item .delete-saved:hover { color: #fff; }
+
+        .crossfade-btn-group {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-left: auto;
+            margin-right: 5px;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            user-select: none;
+        }
+        
+        .crossfade-toggle-btn {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+            color: #FF5500;
+            transition: color 0.2s;
+            font-size: 14px;
+        }
+        
+        .crossfade-toggle-btn.disabled {
+            color: #666 !important;
+            opacity: 0.5;
+        }
+
+        .crossfade-time-display {
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #aaa;
+            min-width: 24px;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        /* IDEE 1: Senkrechtes Popup am Finger */
+                /* IDEE 1: Jetzt fest links neben der Skala positioniert */
+        .crossfade-popup-slider {
+            position: fixed;
+            background: #252525;
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid var(--accent-color);
+            z-index: 2000;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.15s ease, top 0.05s ease; /* top-transition für flüssiges Mitgleiten */
+            transform: translate(-100%, -50%); /* Schiebt das Popup komplett links neben den Ankerpunkt */
+            margin-left: -10px; /* Kleiner Abstand zur Linie */
+        }
+        
+        .crossfade-popup-slider.active { opacity: 1; }
+        
+        .popup-label { font-size: 0.9rem; font-weight: bold; color: #fff; }
+
+        
+                /* Senkrechte Führungslinie links vom Button */
+        .vertical-scale-guide {
+            position: fixed;
+            width: 4px;
+            background: #444;
+            border-radius: 2px;
+            z-index: 1999;
+            pointer-events: none;
+            display: none;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+        
+        .vertical-scale-guide.active { display: block; }
+        
+        .vertical-scale-marker {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            left: -4px;
+            transform: translateY(-50%);
+            transition: top 0.1s ease;
+        }
+
+        /* AB HIER NEU: Beschriftung der Skala */
+        .vertical-scale-guide::before,
+        .vertical-scale-guide::after {
+            position: absolute;
+            left: -35px; /* Schiebt den Text links neben die Linie */
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #aaa;
+            width: 30px;
+            text-align: right;
+            transform: translateY(-50%);
+        }
+
+        .vertical-scale-guide::before {
+            content: "16s"; /* Oben an der Leiste */
+            top: 0;
+        }
+
+        .vertical-scale-guide::after {
+            content: "0s"; /* Unten an der Leiste */
+            top: 100%;
+        }
+
+
+        body.edit-mode .crossfade-btn-group { display: none !important; }
+        body.user-diff .crossfade-btn-group { display: none !important; }
+
+        @keyframes atmen-cyan {
+            0% { box-shadow: 0 0 5px rgba(0, 173, 181, 0.4); border-color: var(--accent-color); }
+            50% { box-shadow: 0 0 20px rgba(0, 173, 181, 0.9); border-color: #00fff2; }
+            100% { box-shadow: 0 0 5px rgba(0, 173, 181, 0.4); border-color: var(--accent-color); }
+        }
+
+        @keyframes atmen-orange {
+            0% { box-shadow: 0 0 5px rgba(255, 170, 0, 0.4); border-color: var(--dj2-color); }
+            50% { box-shadow: 0 0 20px rgba(255, 170, 0, 0.9); border-color: #ffd000; }
+            100% { box-shadow: 0 0 5px rgba(255, 170, 0, 0.4); border-color: var(--dj2-color); }
+        }
+
+        body.user-dj1 .song-card.is-playing {
+            animation: atmen-cyan 2s infinite ease-in-out;
+            border: 1px solid var(--accent-color);
+        }
+
+        body.user-dj2 .song-card.is-playing {
+            animation: atmen-orange 2s infinite ease-in-out;
+            border: 1px solid var(--dj2-color);
+        }
+
+        /* Container für die Teilung */
+/* --- KOMPAKTE AKTIONS-ZEILE (UNTER HEADER) --- */
+
+.split-action-row {
+    display: flex;
+    gap: 8px;
+    padding: 2px 10px;
+    background-color: #121212; /* Tiefes Dunkel */
+    align-items: center;
+    height: 48px; /* Sehr flach und platzsparend */
+}
+
+.split-half {
+    flex: 1;
+    display: flex;
+    flex-direction: column; /* <-- DAS ist der entscheidende Befehl! */
+    gap: 10px;              /* Gibt den Elementen etwas Luft zum Atmen */
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+/* Damit die Drop-Zones (Listen) Platz haben */
+.drop-zone {
+    flex-grow: 1;           /* Nimmt den restlichen Platz ein */
+    min-height: 300px;      /* Damit man immer was sieht */
+    border: 1px dashed #444; /* Nur zur Kontrolle, kannst du später entfernen */
+    margin-top: 10px;
+}
+
+.controls-wrapper {
+    margin-top: 5px; /* Ein ganz kleiner Abstand zum Header */
+}
+
+/* Linker Button: Neuer Block */
+.btn-add-block {
+    width: 100%;
+    height: 32px; /* Einheitliche Höhe */
+    background: transparent;
+    border: 1px solid #00a0a0;
+    color: #00a0a0;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Rechte Seite: Input Gruppe */
+.input-section {
+    display: flex;
+    width: 100%;
+    gap: 6px;
+    align-items: center;
+}
+
+/* Ordner-Button */
 .btn-folder-select {
-    background: #252525; color: #aaa; border: 1px solid #444; width: 45px; height: 40px;
-    border-radius: 6px; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    background: #222;
+    border: 1px solid #444;
+    height: 32px;
+    width: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
 }
-.btn-folder-select.active { border-color: var(--success-green); color: var(--success-green); background: #1a2e22; }
 
-input[type="text"] { 
-    padding: 10px; border-radius: 6px; border: 1px solid #444; background: #252525; color: white;
-    flex-grow: 1; outline: none; font-size: 16px;
+/* Song Eingabefeld */
+#blocklistInputGlobal {
+    flex-grow: 1;
+    height: 32px;
+    background: #1e1e1e;
+    border: 1px solid #333;
+    color: #ccc;
+    padding: 0 8px;
+    border-radius: 4px;
+    font-size: 13px;
+    outline: none;
 }
-.btn-plus { background: var(--accent-color); color: white; border: none; width: 45px; height: 40px; border-radius: 6px; font-weight: bold; font-size: 22px; cursor: pointer; }
 
-/* --- 4. Listen & Blöcke --- */
+/* Der Plus-Button ganz rechts */
+.btn-plus {
+    background-color: #00a0a0;
+    color: white;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Der Container, der alle Blöcke hält */
+/* --- ZWEI-SPALTEN-LAYOUT FÜR DJ-BLÖCKE --- */
+/* --- ZWEI-SPALTEN-LAYOUT: MARC LINKS, GUNNAR RECHTS --- */
 #blocklist-container {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    /* Fest auf 2 Spalten eingestellt - 1fr 1fr sorgt für 50/50 Teilung */
+    grid-template-columns: 1fr 1fr; 
     gap: 15px;
     padding: 10px;
-}
-.block-item { background: #1a1a1a; border: 1px solid #333; border-radius: 6px; overflow: hidden; display: flex; flex-direction: column; }
-.block-item.owner-marc { border-top: 3px solid var(--accent-color); }
-.block-item.owner-gunnar { border-top: 3px solid var(--dj2-color); }
-
-.block-header { padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); }
-.block-content { padding: 4px; }
-.block-item.collapsed .block-content { display: none; }
-
-/* --- 5. Songs / Cards --- */
-.song-card { 
-    background: var(--card-bg); margin-bottom: 2px; padding: 4px 10px; border-radius: 4px;
-    display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem;
-    border: 1px solid rgba(255,255,255,0.05); cursor: grab; min-height: 28px;
-}
-.song-details { flex-grow: 1; overflow: hidden; padding-right: 10px; }
-.song-title-text { font-weight: bold; font-size: 0.9rem; }
-.song-artist-text { font-size: 0.7rem; color: #999; }
-
-body.user-dj1 .song-card.match-found { border: 1.5px solid var(--safe-track-color); }
-body.user-dj2 .song-card.match-found { border: 1.5px solid var(--dj2-color); }
-
-/* --- 6. Features & Komponenten --- */
-/* Crossfade/Slider/Tools */
-.crossfade-btn-group { display: flex; align-items: center; gap: 4px; margin-left: auto; background: rgba(255,255,255,0.03); padding: 2px 6px; border-radius: 4px; }
-.crossfade-toggle-btn.disabled { color: #666; opacity: 0.5; }
-.delete-btn { display: none; color: var(--delete-red); cursor: pointer; }
-body.edit-mode .delete-btn { display: inline-block; }
-
-/* PDF Styles */
-#pdf-template { display: none; color: #000; background: #fff; padding: 15px; }
-
-/* --- 7. Animationen & Responsive --- */
-@keyframes atmen-cyan {
-    0%, 100% { box-shadow: 0 0 5px rgba(0, 173, 181, 0.4); border-color: var(--accent-color); }
-    50% { box-shadow: 0 0 20px rgba(0, 173, 181, 0.9); border-color: #00fff2; }
+    align-items: flex-start;
 }
 
+/* Die einzelnen Blöcke (Ordner) */
+.block-item {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 6px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Erzwingt, dass Marc-Blöcke in der linken Spalte (1) landen */
+.block-item.owner-marc {
+    grid-column: 1;
+    border-top: 3px solid var(--accent-color);
+}
+
+/* Erzwingt, dass Gunnar-Blöcke in der rechten Spalte (2) landen */
+.block-item.owner-gunnar {
+    grid-column: 2;
+    border-top: 3px solid var(--dj2-color);
+}
+
+/* Kompakter Block-Header */
+.block-header {
+    padding: 2px 10px;
+    background: rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    min-height: 30px;
+}
+
+.block-header strong {
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
+}
+
+/* Platzersparnis im Block-Inhalt */
+.block-content {
+    padding: 4px;
+}
+
+.locked-container {
+    border: 1px solid #ff4444; /* Ein roter Rahmen, wenn gesperrt */
+    background: rgba(255, 0, 0, 0.05); /* Dezenter roter Hintergrund */
+    pointer-events: none; /* Verhindert Klicks auf die Liste */
+}
+/* Aber die Toolbar soll natürlich bedienbar bleiben! */
+.locked-container .dj-toolbar {
+    pointer-events: auto;
+}
+
+/* Layout für die beiden Spalten - Zusammengefasst */
+.dj-column {
+    flex: 1; /* Beide nehmen gleich viel Platz ein */
+    min-width: 300px; 
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    /* Optional: Trennung optisch unterstreichen */
+}
+
+#dj1-container { 
+    border-right: 1px solid rgba(255,255,255,0.1); 
+}
+
+/* Die Toolbar als horizontale Reihe */
+.dj-toolbar {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 8px;
+    border-radius: 8px;
+    margin: 5px 0 10px 0;
+}
+
+.tool-btn {
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: transform 0.1s;
+    padding: 2px 5px;
+}
+
+.tool-btn:hover {
+    transform: scale(1.2);
+}
+
+/* Mobile Ansicht: Auf dem Handy alles untereinander */
 @media (max-width: 768px) {
-    #blocklist-container { grid-template-columns: 1fr; }
+    #blocklist-container {
+        grid-template-columns: 1fr;
+    }
+    .block-item.owner-marc, 
+    .block-item.owner-gunnar {
+        grid-column: auto;
+    }
 }
     </style>
 </head>
 <body>
 
 <header class="main-header">
-    <div class="header-left">
-        <span class="dj-label">Marc</span>
-        <button class="btn-icon">✏️</button>
-        <button class="btn-icon">📁</button>
-        <button class="btn-icon">💾</button>
+    <div class="header-side left">
+        Marc: <span id="cnt-dj1">0</span> Songs
     </div>
-
     <div class="header-center">
         MoJoBloX
-        <button class="btn-icon lock">🔒</button>
     </div>
-
-    <div class="header-right">
-        <button class="btn-icon">👁️</button>
-        <button class="btn-icon">↕️</button>
-        <span class="dj-label">Gunnar</span>
+    <div class="header-side right">
+        Gunnar: <span id="cnt-dj2">0</span> Songs
     </div>
 </header>
 
