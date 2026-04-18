@@ -725,8 +725,7 @@ header {
 
     let fadeInInterval = null;
     let nextSongTriggered = false; 
-    let lastKnownDJ1 = []; // Cache für DJ1
-let lastKnownDJ2 = []; // Cache für DJ2
+    
 
 window.lastKnownDJ1 = [];
 window.lastKnownDJ2 = [];
@@ -1562,26 +1561,20 @@ function renderBlocks() {
     const bContainer = document.getElementById('blocklist-container');
     if (!bContainer) return;
 
-    // --- SICHERHEITS-LOGIK ---
-    // Wenn dataDJ1 Daten hat, nimm sie. Wenn nicht, nimm das Backup aus dem Cache.
+    // --- SICHERHEITS-LOGIK & DATEN ABRUF ---
+    // Wir nehmen die Live-Daten, wenn vorhanden, sonst das Backup aus dem Cache
     const list1 = (Array.isArray(dataDJ1) && dataDJ1.length > 0) ? dataDJ1 : (window.lastKnownDJ1 || []);
     const list2 = (Array.isArray(dataDJ2) && dataDJ2.length > 0) ? dataDJ2 : (window.lastKnownDJ2 || []);
 
+    const combined = [...list1, ...list2];
+
     console.log("RENDER DEBUG: DJ1 nutzt", list1.length, "Elemente, DJ2 nutzt", list2.length, "Elemente.");
 
-    bContainer.innerHTML = '';
+    bContainer.innerHTML = ''; 
     const renderedFingerprints = new Set();
 
-    // 2. Daten sicher abrufen
-    // 2. Daten sicher abrufen
-// Wir nehmen dataDJ1, wenn es Daten hat, sonst den Cache (lastKnownDJ1)
-const list1 = (Array.isArray(dataDJ1) && dataDJ1.length > 0) ? dataDJ1 : (window.lastKnownDJ1 || []);
-const list2 = (Array.isArray(dataDJ2) && dataDJ2.length > 0) ? dataDJ2 : (window.lastKnownDJ2 || []);
-
-const combined = [...list1, ...list2];
     // 3. Sicherheits-Check: Ist die Liste leer?
     if (combined.length === 0) {
-        // Optional: Hier könntest du einen Hinweis anzeigen, falls nichts geladen wurde
         return;
     }
 
@@ -1601,16 +1594,12 @@ const combined = [...list1, ...list2];
                 seenInBlock.add(songKey);
                 return true;
             });
-
             window.addBlockToBlocklistUI(item.t, cleanSongs, item.cIdx || 0, item.id, item.createdBy);
-            
         } else if (item.type === 'single') {
             const singleEl = document.createElement('div');
-            // 'block-item' ist die entscheidende Klasse für dein Sortable!
             singleEl.className = 'block-item single-song-card'; 
             singleEl.setAttribute('data-id', item.id);
             singleEl.setAttribute('data-owner', item.createdBy || 'dj1');
-            
             singleEl.innerHTML = `
                 <div class="block-header" style="display: flex; align-items: center; gap: 10px; padding: 10px; background: #2a2a2a; border-radius: 8px; border-left: 4px solid #ffcc00;">
                     <div class="drag-handle" style="cursor: grab;">☰</div>
