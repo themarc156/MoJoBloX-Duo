@@ -715,33 +715,36 @@ margin: 2px 0 5px 0 !important;}
 }
 
 /* 1. Spalten-Struktur (Symmetrie erzwingen) */
+/* 1. Die Spalte als Flex-Container */
 .dj-column {
     flex: 1; 
     min-width: 0; 
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    /* Begrenzt die Spalte auf die Fensterhöhe, damit der innere Bereich scrollt */
-    height: calc(100vh - 60px); 
+    /* Höhe begrenzen, damit der innere Bereich scrollt */
+    height: calc(100vh - 80px); /* 80px abziehen für den oberen Header */
+    overflow: hidden; 
 }
 
-/* 2. Sticky-Elemente (Toolbar & Controls bleiben oben) */
-.dj-toolbar, .controls-wrapper {
+/* 2. Der neue Container, der ALLES oben festhält */
+.column-sticky-header {
     position: sticky;
     top: 0;
     z-index: 100;
-    background-color: var(--bg-color); /* WICHTIG: Überdeckt die scrollenden Elemente */
+    /* WICHTIG: Farbe hier setzen, damit die Liste darunter verschwindet */
+    background-color: #1a1a1a; 
     width: 100%;
     margin: 0 !important;
 }
 
-/* 3. Scroll-Bereich (Hier rollt die Liste durch) */
+/* 3. Die Liste füllt den Rest aus und scrollt */
 .drop-zone {
     flex-grow: 1;
-    overflow-y: auto; /* Scrollbar erscheint nur hier */
+    overflow-y: auto;
     width: 100%;
     margin: 0 !important;
-    padding-bottom: 20px; /* Optionaler Abstand nach unten */
+    padding-bottom: 20px;
 }
     </style>
 </head>
@@ -767,6 +770,8 @@ margin: 2px 0 5px 0 !important;}
     
     <div id="dj1-container" class="dj-column">
         
+<div class="column-sticky-header">
+
         <div class="dj-toolbar">
             <div class="tool-btn" onclick="headerActionLeft('dj1')" title="Editieren">✏️</div>
             <div class="tool-btn" onclick="window.toggleSaveDropdown('dj1')" title="Speichern">💾</div>
@@ -780,14 +785,15 @@ margin: 2px 0 5px 0 !important;}
             <div class="input-section" style="display: flex; gap: 5px; margin-top: 5px;">
                 <div class="btn-folder-select" onclick="window.triggerFolderSelection('dj1')">📁</div>
                 <input type="text" id="input-dj1" placeholder="Song..." style="flex-grow: 1;">
-                <button class="btn-plus" onclick="addSongToTopList('dj1')">+</button>
+                <button class="btn-plus" onclick="addSongToTopList('dj1')">+</button></div>
             </div>
-        </div>
-        <div id="dj1-list" class="drop-zone"></div>
+        </div><div id="dj1-list" class="drop-zone"></div>
     </div>
 
     <div id="dj2-container" class="dj-column">
         
+<div class="column-sticky-header">
+
         <div class="dj-toolbar">
             <div class="tool-btn" onclick="headerActionLeft('dj2')" title="Editieren">✏️</div>
             <div class="tool-btn" onclick="window.toggleSaveDropdown('dj2')" title="Speichern">💾</div>
@@ -801,10 +807,9 @@ margin: 2px 0 5px 0 !important;}
             <div class="input-section" style="display: flex; gap: 5px; margin-top: 5px;">
                 <div class="btn-folder-select" onclick="window.triggerFolderSelection('dj2')">📁</div>
                 <input type="text" id="input-dj2" placeholder="Song..." style="flex-grow: 1;">
-                <button class="btn-plus" onclick="addSongToTopList('dj2')">+</button>
+                <button class="btn-plus" onclick="addSongToTopList('dj2')">+</button></div>
             </div>
-        </div>
-        <div id="dj2-list" class="drop-zone"></div>
+        </div><div id="dj2-list" class="drop-zone"></div>
     </div>
 </div>
 </div>
