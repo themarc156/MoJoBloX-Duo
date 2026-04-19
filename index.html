@@ -106,13 +106,15 @@
         .input-section { 
             display: flex; 
             gap: 8px; 
-            margin-bottom: 10px; 
-            position: sticky; 
+margin-bottom: 5px !important; 
+           position: sticky; 
             top: 44px; 
             z-index: 1001; 
             background: var(--bg-color); 
             padding: 8px 0; 
             align-items: center;
+            padding-top: 2px !important; 
+    padding-bottom: 2px !important;
         }
         
         input[type="text"] { padding: 10px; border-radius: 6px; border: 1px solid #444; background: #252525; color: white; outline: none; font-size: 16px; flex-grow: 1; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
@@ -147,8 +149,8 @@
             border-radius: 8px; 
             width: 100%; 
             font-weight: bold; 
-            margin-bottom: 15px; 
-            cursor: pointer;
+margin-bottom: 5px !important; 
+           cursor: pointer;
             position: sticky; 
             top: 92px; 
             z-index: 1000;
@@ -157,8 +159,8 @@
 
         .song-card { 
     background: var(--card-bg); 
-    margin-bottom: 2px; /* Von 4px auf 2px reduziert */
-    padding: 4px 10px;  /* Deutlich weniger Padding (oben/unten 4px) */
+margin-bottom: 1px !important; 
+   padding: 4px 10px;  /* Deutlich weniger Padding (oben/unten 4px) */
     border-radius: 4px; 
     display: flex; 
     justify-content: space-between; 
@@ -167,6 +169,7 @@
     border: 1px solid rgba(255,255,255,0.05); 
     cursor: grab; 
     min-height: 28px;   /* Flachere Mindesthöhe */
+    height: 28px !important; /* Etwas flacher als Standard */
     position: relative; 
 }
         .song-card:active { cursor: grabbing; }
@@ -600,8 +603,7 @@
     display: grid;
     /* Fest auf 2 Spalten eingestellt - 1fr 1fr sorgt für 50/50 Teilung */
     grid-template-columns: 1fr 1fr; 
-    gap: 15px;
-    padding: 10px;
+gap: 8px !important;    padding: 10px;
     align-items: flex-start;
 }
 
@@ -613,6 +615,7 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    margin-bottom: 5px !important;
 }
 
 /* Erzwingt, dass Marc-Blöcke in der linken Spalte (1) landen */
@@ -676,10 +679,8 @@
     justify-content: center;
     gap: 15px;
     background: rgba(255, 255, 255, 0.05);
-    padding: 8px;
-    border-radius: 8px;
-    margin: 5px 0 10px 0;
-}
+padding: 4px !important;    border-radius: 8px;
+margin: 2px 0 5px 0 !important;}
 
 .tool-btn {
     cursor: pointer;
