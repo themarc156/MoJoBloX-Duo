@@ -42,8 +42,10 @@ body {
     grid-template-columns: 1fr 1fr; 
     gap: var(--gap);
     padding: var(--gap); 
-    width: 100%; 
+    width: 100%;
+    align-items: start; /* WICHTIG: Verhindert, dass Elemente sich ungleichmäßig strecken */
 }
+
 @media (max-width: 768px) { #blocklist-container { grid-template-columns: 1fr; } }
 
 /* --- 4. HEADER & INPUTS --- */
