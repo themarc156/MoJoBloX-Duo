@@ -722,8 +722,8 @@ margin: 2px 0 5px 0 !important;}
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    /* Höhe begrenzen, damit der innere Bereich scrollt */
-    height: calc(100vh - 80px); /* 80px abziehen für den oberen Header */
+    /* Feste Höhe: Nimmt den Platz bis zum Seitenende */
+    height: 100vh; 
     overflow: hidden; 
 }
 
@@ -732,19 +732,21 @@ margin: 2px 0 5px 0 !important;}
     position: sticky;
     top: 0;
     z-index: 100;
-    /* WICHTIG: Farbe hier setzen, damit die Liste darunter verschwindet */
-    background-color: #1a1a1a; 
+    background-color: #1a1a1a; /* Dein Hintergrund */
     width: 100%;
-    margin: 0 !important;
+    /* WICHTIG: Damit die Elemente untereinander gestapelt werden */
+    display: flex; 
+    flex-direction: column; 
+    padding: 10px 0;
+    border-bottom: 1px solid #333; /* Trennlinie zur Liste, hilft bei der Sichtbarkeit */
 }
 
 /* 3. Die Liste füllt den Rest aus und scrollt */
 .drop-zone {
     flex-grow: 1;
-    overflow-y: auto;
+    overflow-y: auto; /* Nur hier wird gescrollt */
     width: 100%;
-    margin: 0 !important;
-    padding-bottom: 20px;
+    margin: 0;
 }
     </style>
 </head>
