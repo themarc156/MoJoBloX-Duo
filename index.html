@@ -13,524 +13,84 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" crossorigin="anonymous"></script>
 
-    <style>
-        :root {
-    /* --- FARBEN (Deine DNA - nicht ändern!) --- */
+<style>
+/* --- 1. VARIABLEN (Basis) --- */
+:root {
     --bg-color: #121212;
     --accent-color: #00adb5;
     --lock-color: #ff4d4d;
     --text-color: #eeeeee;
     --card-bg: #2a2a2a;
     --delete-red: #ff4d4d;
-    --f-none: #1e1e1e; --f-blue: #0a2647; --f-red: #4a0e0e; --f-green: #0e3a1a; --f-gold: #3d3000;
-    --safe-track-color: #00adb5;
     --dj2-color: #ffaa00;
     --success-green: #2ecc71;
-
-    /* --- DESKTOP LAYOUT-VARIABLEN (Neu!) --- */
-    --gap: 8px;              /* Standard-Abstand zwischen Spalten */
-    --row-height: 32px;      /* Höhe der Song-Karten für Mausbedienung */
-    --header-height: 40px;   /* Höhe der Header/Toolbar */
-    --font-size-base: 13px;  /* Desktop-Standard */
-    --radius: 4px;           /* Einheitlicher Radius für alles */
+    --gap: 8px;
+    --row-height: 32px;
+    --radius: 4px;
 }
 
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg-color); color: var(--text-color); margin: 0; user-select: none; touch-action: pan-y; overflow-x: hidden; padding-bottom: 70px; }
+/* --- 2. BASIS-LAYOUT --- */
+* { box-sizing: border-box; }
+body { 
+    font-family: 'Segoe UI', sans-serif; background: var(--bg-color); color: var(--text-color); 
+    margin: 0; user-select: none; padding-bottom: 70px; overflow-x: hidden;
+}
 
-        /* Wenn aktiv, wird das Scrollen der Liste verhindert */
-        body.lock-scroll {
-            overflow: hidden !important;
-            touch-action: none !important;
-        }
+/* --- 3. DAS GRID (WICHTIGSTE ANPASSUNG) --- */
+#blocklist-container {
+    display: grid; 
+    grid-template-columns: 1fr 1fr; 
+    gap: var(--gap);
+    padding: var(--gap); 
+    width: 100%; 
+}
+@media (max-width: 768px) { #blocklist-container { grid-template-columns: 1fr; } }
 
-/* Neuer Header-Container */
-/* --- OPTIMIERTES LAYOUT: KOMPAKT & SAUBER --- */
-
-/* Header: Schön flach */
+/* --- 4. HEADER & INPUTS --- */
 header.main-header {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    align-items: center;
-    background: #222;
-    padding: 0 10px;
-    border-bottom: 2px solid var(--accent-color);
-    color: var(--accent-color);
-    font-weight: bold;
-    font-size: 0.9rem;
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-height: 40px !important; /* Etwas höher für bessere Bedienbarkeit */
+    display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+    background: #222; padding: 0 10px; height: 40px; border-bottom: 2px solid var(--accent-color);
+    position: sticky; top: 0; z-index: 1000;
 }
-
-.header-center { font-size: 1rem; letter-spacing: 1px; text-align: center; }
-
-.header-side { font-size: 0.8rem; color: #ccc; display: flex; align-items: center; gap: 6px; }
-
-/* Input-Section: Alles auf 32px Höhe gestutzt */
 .input-section {
-    display: flex;
-    gap: 5px;
-    margin-bottom: 4px !important;
-    position: sticky;
-    top: 34px;
-    z-index: 1001;
-background: var(--bg-color); 
-padding: 6px !important; /* Hier fehlte der Atemraum */  
-  align-items: center;
+    display: flex; gap: 5px; padding: 6px; background: var(--bg-color);
+    position: sticky; top: 40px; z-index: 1001;
 }
+input[type="text"] { height: 32px; padding: 0 8px; border-radius: var(--radius); border: 1px solid #444; background: #252525; color: white; flex-grow: 1; }
 
-input[type="text"] { 
-    padding: 0 8px; 
-    border-radius: 4px; 
-    border: 1px solid #444; 
-    background: #252525; 
-    color: white; 
-    height: 32px !important;
-    font-size: 14px; 
-    flex-grow: 1; 
-}
-
-.btn-plus, .btn-folder-select {
-    height: 32px !important;
-    width: 32px !important;
-    border-radius: 4px;
-    font-size: 16px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.btn-plus { background: var(--accent-color); color: white; border: none; }
-
-.btn-folder-select { background: #252525; color: #aaa; border: 1px solid #444; }
-
-.btn-add-block { 
-    height: 28px !important;
-    font-size: 0.8rem;
-    padding: 0 10px;
-    margin-bottom: 8px !important;
-}
-
-/* Song-Karten: Das Herzstück der Platzersparnis */
+/* --- 5. SONG-KARTEN --- */
 .song-card { 
-    background: var(--card-bg); 
-    height: var(--row-height); /* Nutzt die Desktop-Variable (z.B. 32px) */
-    padding: 0 10px; 
-    margin-bottom: 2px; 
-    border-radius: var(--radius); 
-    display: flex; 
-    align-items: center; /* Zentriert alles perfekt vertikal */
-    justify-content: space-between; 
-    border: 1px solid rgba(255,255,255,0.08); 
-    transition: background 0.1s;
-    cursor: default;
+    background: var(--card-bg); height: var(--row-height); padding: 0 10px; margin-bottom: 2px;
+    border-radius: var(--radius); display: flex; align-items: center; border: 1px solid rgba(255,255,255,0.08); 
 }
+.song-card:hover { background: #333; }
+.song-details { flex-grow: 1; overflow: hidden; padding-right: 10px; display: flex; flex-direction: column; }
+.song-title-text { font-size: 0.85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-/* Hover-Effekt: Der größte Vorteil am Desktop */
-.song-card:hover {
-    background: #333;
-    border-color: #444;
-}
-
-.song-details {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 0px; 
-    flex-grow: 1;
-    overflow: hidden;
-    padding-right: 10px; 
-}
-
-.song-title-text { 
-    font-size: 0.85rem; 
-    font-weight: 600; 
-    line-height: 1.2;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.song-artist-text { 
-    font-size: 0.7rem; 
-    color: #999; 
-    line-height: 1.1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-       /* --- OPTIMIERTER BLOCK-LAYOUT-BEREICH --- */
-
-body.edit-mode .song-details { cursor: pointer; }
-body.edit-mode .song-details:hover .song-title-text { text-decoration: underline dotted var(--accent-color); }
-
-body.user-dj1 .song-card.match-found { border: 1.5px solid var(--safe-track-color) !important; box-shadow: 0 0 5px rgba(0, 173, 181, 0.3); }
-body.user-dj2 .song-card.match-found { border: 1.5px solid var(--dj2-color) !important; box-shadow: 0 0 5px rgba(255, 170, 0, 0.3); }
-
-/* Color-dot etwas kleiner */
-.color-dot { width: 20px; height: 20px; border-radius: 50%; border: 2px solid #fff; cursor: pointer; }
-.sortable-ghost { opacity: 0.1; background: var(--accent-color) !important; }
-
-#blocklist-container > .song-card { border-left: 4px solid var(--accent-color); }
-body.user-dj2 #blocklist-container > .song-card { border-left: 4px solid var(--dj2-color) !important; }
-
-/* Abstände reduziert */
-.block-item { margin-bottom: 2px !important; position: relative; border-radius: 6px; overflow: hidden; }
-.block-item.collapsed { background: #1a1a1a !important; }
-.block-item.collapsed .block-header strong { text-decoration: none !important; }
-
-/* Header von Blöcken flacher */
-.block-header { 
-    padding: 4px 8px !important; 
-    background: rgba(255, 255, 255, 0.08); /* Etwas dunklerer Hintergrund zur Trennung */
-    display: flex; 
-    align-items: center; 
-    min-height: 28px !important; 
-    margin-bottom: 2px;
-}
-.block-header strong { font-size: 0.9rem; flex-grow: 1; cursor: pointer; padding: 0 2px; }
-body.edit-mode .block-header strong { cursor: cell; text-decoration: underline dotted var(--accent-color); }
-
-.block-song-count { font-size: 0.8rem; opacity: 0.7; margin-left: 4px; font-weight: normal; }
-
-/* Content-Padding halbiert */
+/* --- 6. BLÖCKE --- */
+.block-item { background: #1a1a1a; border: 1px solid #333; border-radius: var(--radius); margin-bottom: 8px; }
+.block-header { padding: 4px 10px; background: rgba(255, 255, 255, 0.05); display: flex; align-items: center; min-height: 36px; }
 .block-content { padding: 4px; }
-.block-item.collapsed .block-content { display: none; }
-.block-item:not(.collapsed) .block-content { display: block; }
 
-.collapse-icon { transition: transform 0.3s; margin-right: 6px; font-size: 1rem; cursor: pointer; padding: 0 2px; transform: rotate(-90deg); }
-.block-item:not(.collapsed) .collapse-icon { transform: rotate(0deg); }
-.block-sortable-list { min-height: 10px; }
-
-        /* --- KOMPAKTE AKTIONSELEMENTE & FOOTER --- */
-
-.delete-btn { 
-    display: none !important; 
-    color: var(--delete-red); 
-    cursor: pointer; 
-    font-weight: bold; 
-    font-size: 20px !important; /* Etwas kleiner */
-    padding: 0 8px !important;  /* Deutlich weniger Platz */
-    margin: 0 auto 0 0;        /* Einfacher zentriert */
-    pointer-events: auto !important; 
-}
-body.edit-mode .delete-btn { display: inline-block !important; }
-
-/* Farbpunkte verkleinert */
-.color-dot { display: none !important; width: 18px !important; height: 18px !important; border: 1px solid #fff; }
-body.edit-mode .color-dot { display: block !important; }
-
-/* Preview-Button flacher */
-.play-preview-btn {
-    display: inline-block;
-    color: var(--accent-color);
-    cursor: pointer;
-    font-size: 0.8rem;
-    padding: 2px 8px !important; /* Viel flacher */
-    margin: 0 auto 0 5px;
-    border-radius: 4px;
-    transition: background 0.2s;
-    user-select: none;
-}
-.play-preview-btn:hover { background: rgba(255, 255, 255, 0.05); }
-.play-preview-btn.playing { color: var(--success-green); }
-body.edit-mode .play-preview-btn { display: none !important; }
-body.user-diff .play-preview-btn { display: none !important; }
-
-/* Drag-Handle angepasst */
-.drag-handle { cursor: grab; font-size: 16px; color: #666; padding: 2px 4px; margin-left: 8px; }
-.drag-handle:active { cursor: grabbing; }
-
-/* Footer-Bereich kompakter */
+/* --- 7. FOOTER --- */
 footer {
     position: fixed; bottom: 0; left: 0; right: 0;
     background: #1a1a1a; border-top: 1px solid #333;
-    display: flex; justify-content: space-around; padding: 6px !important; z-index: 1003;
-}
-.footer-btn {
-    background: #252525; color: #aaa; border: 1px solid #444; padding: 4px 8px !important;
-    border-radius: 12px; font-size: 0.8rem; cursor: pointer; font-weight: bold;
-    display: flex; flex-direction: column; align-items: center; gap: 0px;
-}
-.footer-btn.active { background: var(--accent-color); color: white; border-color: var(--accent-color); }
-.btn-counter { font-size: 0.65rem; opacity: 0.7; }
-        
-        /* --- OPTIMIERTE KOMPAKT-ELEMENTE --- */
-
-.safe-tag { 
-    color: #fff; 
-    font-size: 0.75rem !important; /* Etwas kleiner */
-    font-weight: bold; 
-    position: absolute;
-    right: 140px; 
-    top: 50%;
-    transform: translateY(-50%);
-    white-space: nowrap;
-    padding: 1px 4px;
-    border-radius: 3px;
-}
-body.user-dj1 .safe-tag { background: var(--safe-track-color); }
-body.user-dj2 .safe-tag { background: var(--dj2-color); color: #121212; }
-
-/* Drop-Area: Deutlich kompakter */
-.drop-target-area {
-    background: #1e1e1e; 
-    border: 1px dashed var(--accent-color); /* Dünnerer Rahmen */
-    border-radius: 6px;
-    padding: 8px !important; /* Von 15px reduziert */
-    text-align: center; 
-    color: var(--accent-color); 
-    font-weight: bold; 
-    margin-bottom: 8px !important; /* Von 15px reduziert */
-    transition: all 0.3s; 
-    position: sticky; 
-    top: 40px; 
-    z-index: 1001; 
+    display: flex; justify-content: space-around; padding: 6px; z-index: 1003;
 }
 
-.song-type-icon { margin-left: auto; margin-right: 8px; opacity: 0.6; font-size: 0.8rem; }
-body.user-diff .song-card { cursor: default !important; user-select: none !important; -webkit-user-drag: none !important; }
-
-/* Diff-Header: Enger zusammen */
-.diff-section-header { 
-    display: flex; align-items: center; opacity: 0.7; 
-    margin-top: 8px !important; margin-bottom: 2px !important; 
-    font-size: 0.85rem; cursor: pointer; padding: 2px 0; 
-}
-.diff-section-header .collapse-icon { margin-right: 4px; }
-.diff-section-content { display: block; }
-.diff-section-content.collapsed { display: none; }
-
-.diff-takeover-btn {
-    background: #333; color: var(--accent-color); border: 1px solid var(--accent-color);
-    border-radius: 4px; padding: 2px 6px !important; font-size: 0.75rem; 
-    font-weight: bold; cursor: pointer;
-}
-
-/* PDF Template (Für Druck okay, aber etwas aufgeräumter) */
-#pdf-template { display: none; color: #000; background: #fff; padding: 15px; font-family: Arial, sans-serif; }
-#pdf-template h1 { font-size: 18px; border-bottom: 1px solid #000; margin-bottom: 8px; }
-#pdf-template h2 { font-size: 14px; margin-top: 10px; margin-bottom: 5px; }
-
-/* Clean-Mode: Noch flacher */
-body.clean-mode .block-header { display: none !important; }
-body.clean-mode .block-item { background: transparent !important; margin-bottom: 0px; border-bottom: 1px dashed #333; padding-bottom: 2px; margin-top: 2px; }
-body.clean-mode .block-content { padding: 0; }
-
-        /* --- KOMPAKTE DROPDOWNS & CROSSFADE --- */
-
-.dropdown-menu {
-    display: none;
-    position: absolute;
-    top: 32px; /* Etwas näher am Button */
-    left: 0;
-    background: #252525;
-    border: 1px solid var(--accent-color);
-    border-radius: 4px;
-    box-shadow: 0 5px 10px rgba(0,0,0,0.5);
-    z-index: 2000;
-    min-width: 160px; /* Etwas schmaler */
-    max-height: 250px;
-    overflow-y: auto;
-}
-.dropdown-menu.active { display: block; }
-
-.dropdown-item {
-    padding: 6px 12px !important; /* Deutlich kompakter */
-    font-size: 0.85rem;
-    color: #eee;
-    cursor: pointer;
-    border-bottom: 1px solid #333;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-.dropdown-item:hover { background: #333; }
-.dropdown-item.action-save { color: var(--accent-color); font-weight: bold; }
-.dropdown-item .delete-saved { color: var(--delete-red); font-size: 1.1rem; padding: 0 4px; }
-
-/* Crossfade-Bereich: Enger zusammen */
-.crossfade-btn-group {
-    display: flex;
-    align-items: center;
-    gap: 2px !important;
-    margin-left: auto;
-    margin-right: 4px;
-    background: rgba(255, 255, 255, 0.03);
-    padding: 1px 4px !important;
-    border-radius: 3px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.crossfade-toggle-btn {
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 2px 4px !important;
-    color: #FF5500;
-    font-size: 13px;
-}
-.crossfade-time-display {
-    font-size: 0.7rem !important;
-    font-weight: bold;
-    color: #aaa;
-    min-width: 20px;
-    text-align: center;
-    cursor: pointer;
-}
-
-/* Popup-Slider & Skala */
-.crossfade-popup-slider {
-    position: fixed;
-    background: #252525;
-    padding: 2px 6px !important;
-    border-radius: 4px;
-    border: 1px solid var(--accent-color);
-    z-index: 2000;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.6);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.15s ease, top 0.05s ease;
-    transform: translate(-100%, -50%);
-    margin-left: -8px; 
-}
-.crossfade-popup-slider.active { opacity: 1; }
-.popup-label { font-size: 0.85rem; font-weight: bold; color: #fff; }
-
-.vertical-scale-guide {
-    position: fixed;
-    width: 3px; /* Etwas dünner */
-    background: #444;
-    border-radius: 2px;
-    z-index: 1999;
-    pointer-events: none;
-    display: none;
-}
-.vertical-scale-guide.active { display: block; }
-.vertical-scale-marker {
-    position: absolute;
-    width: 10px; /* Etwas kleiner */
-    height: 10px;
-    border-radius: 50%;
-    background: var(--accent-color);
-    left: -3.5px;
-    transform: translateY(-50%);
-}
-
-/* Skalenbeschriftung */
-.vertical-scale-guide::before,
-.vertical-scale-guide::after {
-    left: -28px !important; /* Näher an die Linie gerückt */
-    font-size: 0.7rem !important;
-}
-
-
-        /* --- KOMPAKTE STRUKTUR: DUAL-DJ & ACTIONS --- */
-
-body.edit-mode .crossfade-btn-group { display: none !important; }
-body.user-diff .crossfade-btn-group { display: none !important; }
-
-/* Animationen beibehalten */
+/* --- 8. ANIMATIONEN & FUNKTIONEN --- */
 @keyframes atmen-cyan {
-    0% { box-shadow: 0 0 5px rgba(0, 173, 181, 0.4); border-color: var(--accent-color); }
+    0%, 100% { box-shadow: 0 0 5px rgba(0, 173, 181, 0.4); border-color: var(--accent-color); }
     50% { box-shadow: 0 0 15px rgba(0, 173, 181, 0.8); border-color: #00fff2; }
-    100% { box-shadow: 0 0 5px rgba(0, 173, 181, 0.4); border-color: var(--accent-color); }
 }
-
-@keyframes atmen-orange {
-    0% { box-shadow: 0 0 5px rgba(255, 170, 0, 0.4); border-color: var(--dj2-color); }
-    50% { box-shadow: 0 0 15px rgba(255, 170, 0, 0.8); border-color: #ffd000; }
-    100% { box-shadow: 0 0 5px rgba(255, 170, 0, 0.4); border-color: var(--dj2-color); }
-}
-
 body.user-dj1 .song-card.is-playing { animation: atmen-cyan 2s infinite ease-in-out; border: 1px solid var(--accent-color); }
-body.user-dj2 .song-card.is-playing { animation: atmen-orange 2s infinite ease-in-out; border: 1px solid var(--dj2-color); }
 
-/* Aktions-Leiste */
-.split-action-row {
-    display: flex; gap: 4px; padding: 2px !important;
-    background-color: #121212; align-items: center; height: 32px !important;
-}
-
-.split-half {
-    flex: 1; display: flex; flex-direction: column;
-    gap: 2px !important; padding: 2px !important;
-}
-
-.drop-zone { flex-grow: 1; min-height: 200px; border: 1px dashed #333; margin-top: 2px; }
-
-/* Buttons & Inputs auf einheitliche 32px gestutzt */
-.btn-add-block {
-    width: 100%; height: 32px !important; background: transparent;
-    border: 1px solid #00a0a0; color: #00a0a0; border-radius: 4px;
-    font-size: 10px; font-weight: bold; cursor: pointer;
-}
-
-.btn-folder-select, .btn-plus { height: 32px !important; width: 32px !important; display: flex; align-items: center; justify-content: center; border-radius: 4px; cursor: pointer; }
-#blocklistInputGlobal { height: 32px !important; flex-grow: 1; background: #1e1e1e; border: 1px solid #333; color: #ccc; padding: 0 8px; border-radius: 4px; font-size: 13px; }
-.btn-plus { background-color: #00a0a0; color: white; border: none; font-size: 16px; }
-
-/* Grid-Layout */
-#blocklist-container {
-    display: grid; 
-    grid-template-columns: 1fr 1fr; /* Zwei gleich große Spalten */
-    gap: var(--gap);
-    padding: var(--gap); 
-    width: 100%; /* WICHTIG: Erzwingt die volle Breite */
-    align-items: flex-start;
-}
-
-.block-item { 
-    background: #1a1a1a; 
-    border: 1px solid #333; 
-    border-radius: var(--radius); 
-    overflow: hidden; 
-    display: flex; 
-    flex-direction: column; 
-}
-
-.block-item.owner-marc { border-top: 3px solid var(--accent-color); }
-.block-item.owner-gunnar { border-top: 3px solid var(--dj2-color); }
-
-.block-header { 
-    padding: 0 10px; 
-    background: rgba(255, 255, 255, 0.05); 
-    display: flex; 
-    align-items: center; 
-    min-height: 36px; /* Deutlich besser für Desktop-Klicks */
-    border-bottom: 1px solid #333;
-}
-
-.block-header strong { 
-    font-size: 0.9rem; 
-    letter-spacing: 0.5px; 
-    color: #fff;
-}
-
-.block-content { padding: 2px !important; }
-
-/* Toolbar */
-.dj-toolbar {
-    display: flex; justify-content: center; gap: 8px !important;
-    background: rgba(255, 255, 255, 0.05); padding: 2px !important;
-    border-radius: 4px; margin: 2px 0;
-}
-.tool-btn { cursor: pointer; font-size: 1rem; padding: 2px; }
-
-/* Mobile Optimierung */
-@media (max-width: 768px) {
-    #blocklist-container { grid-template-columns: 1fr; }
-}
-
-.locked-container { border: 1px solid #ff4444; background: rgba(255, 0, 0, 0.05); pointer-events: none; }
-.locked-container .dj-toolbar { pointer-events: auto; }
-    </style>
+/* --- 9. KLEINERE HELFER --- */
+.delete-btn { display: none; color: var(--delete-red); cursor: pointer; }
+body.edit-mode .delete-btn { display: inline-block; }
+.btn-plus { height: 32px; width: 32px; background: var(--accent-color); color: white; border: none; cursor: pointer; border-radius: 4px; }
+</style>
 </head>
 <body>
 
