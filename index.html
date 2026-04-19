@@ -748,6 +748,37 @@ margin: 2px 0 5px 0 !important;}
     width: 100%;
     margin: 0;
 }
+
+/* 1. Die gesamte Seite "einfrieren" */
+html, body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden; /* Wichtig: Die ganze Seite darf nicht scrollen */
+    background-color: #000; /* Oder deine Hintergrundfarbe */
+}
+
+/* 2. Der Haupt-Wrapper (da wo deine zwei Spalten drin liegen) */
+#page-blocklist {
+    display: flex;
+    height: 100vh; /* Füllt genau den Bildschirm aus */
+    overflow: hidden;
+}
+
+/* 3. Die Spalten */
+.dj-column {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden; /* Auch hier: Die Spalte darf nicht scrollen */
+}
+
+/* 4. Die Liste (HIER darf gescrollt werden) */
+.drop-zone {
+    flex: 1; /* Nimmt den restlichen Platz ein */
+    overflow-y: auto; /* Nur hier erscheint der Scrollbalken */
+    width: 100%;
+}
+
     </style>
 </head>
 <body>
