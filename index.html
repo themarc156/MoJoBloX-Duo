@@ -15,17 +15,25 @@
 
     <style>
         :root {
-            --bg-color: #121212;
-            --accent-color: #00adb5;
-            --lock-color: #ff4d4d;
-            --text-color: #eeeeee;
-            --card-bg: #2a2a2a;
-            --delete-red: #ff4d4d;
-            --f-none: #1e1e1e; --f-blue: #0a2647; --f-red: #4a0e0e; --f-green: #0e3a1a; --f-gold: #3d3000;
-            --safe-track-color: #00adb5;
-            --dj2-color: #ffaa00;
-            --success-green: #2ecc71;
-        }
+    /* --- FARBEN (Deine DNA - nicht ändern!) --- */
+    --bg-color: #121212;
+    --accent-color: #00adb5;
+    --lock-color: #ff4d4d;
+    --text-color: #eeeeee;
+    --card-bg: #2a2a2a;
+    --delete-red: #ff4d4d;
+    --f-none: #1e1e1e; --f-blue: #0a2647; --f-red: #4a0e0e; --f-green: #0e3a1a; --f-gold: #3d3000;
+    --safe-track-color: #00adb5;
+    --dj2-color: #ffaa00;
+    --success-green: #2ecc71;
+
+    /* --- DESKTOP LAYOUT-VARIABLEN (Neu!) --- */
+    --gap: 8px;              /* Standard-Abstand zwischen Spalten */
+    --row-height: 32px;      /* Höhe der Song-Karten für Mausbedienung */
+    --header-height: 40px;   /* Höhe der Header/Toolbar */
+    --font-size-base: 13px;  /* Desktop-Standard */
+    --radius: 4px;           /* Einheitlicher Radius für alles */
+}
 
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg-color); color: var(--text-color); margin: 0; user-select: none; touch-action: pan-y; overflow-x: hidden; padding-bottom: 70px; }
 
@@ -108,39 +116,50 @@ input[type="text"] {
 /* Song-Karten: Das Herzstück der Platzersparnis */
 .song-card { 
     background: var(--card-bg); 
-    margin-bottom: 2px !important; /* Kleiner Abstand zwischen den Karten */
-    padding: 4px 8px !important;   /* Mehr Luft für den Text */
-    border-radius: 4px; 
+    height: var(--row-height); /* Nutzt die Desktop-Variable (z.B. 32px) */
+    padding: 0 10px; 
+    margin-bottom: 2px; 
+    border-radius: var(--radius); 
     display: flex; 
+    align-items: center; /* Zentriert alles perfekt vertikal */
     justify-content: space-between; 
-    align-items: center; 
-    font-size: 0.85rem; 
     border: 1px solid rgba(255,255,255,0.08); 
-    min-height: 30px !important; /* Deutlich besser lesbar */
+    transition: background 0.1s;
+    cursor: default;
 }
 
-.song-title-text { font-size: 0.8rem; font-weight: bold; }
-.song-artist-text { font-size: 0.65rem; color: #999; }
+/* Hover-Effekt: Der größte Vorteil am Desktop */
+.song-card:hover {
+    background: #333;
+    border-color: #444;
+}
 
 .song-details {
     display: flex;
     flex-direction: column;
-    gap: 0px; /* Abstand zwischen Titel und Interpret entfernt */
+    justify-content: center;
+    gap: 0px; 
     flex-grow: 1;
     overflow: hidden;
     padding-right: 10px; 
 }
 
-        .song-title-text {
-    font-weight: bold;
-    font-size: 0.9rem;
+.song-title-text { 
+    font-size: 0.85rem; 
+    font-weight: 600; 
     line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.song-artist-text {
-    font-size: 0.7rem; /* Interpret noch ein Stück kleiner */
-    color: #999;
+.song-artist-text { 
+    font-size: 0.7rem; 
+    color: #999; 
     line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
        /* --- OPTIMIERTER BLOCK-LAYOUT-BEREICH --- */
 
@@ -461,17 +480,37 @@ body.user-dj2 .song-card.is-playing { animation: atmen-orange 2s infinite ease-i
 #blocklist-container {
     display: grid; 
     grid-template-columns: 1fr 1fr;
-    gap: 8px !important; /* Mehr Abstand zwischen den Spalten */
-    padding: 6px !important; 
+    gap: var(--gap); /* Nutzt den definierten Abstand */
+    padding: var(--gap); 
     align-items: flex-start;
 }
 
-.block-item { background: #1a1a1a; border: 1px solid #333; border-radius: 4px; overflow: hidden; display: flex; flex-direction: column; }
+.block-item { 
+    background: #1a1a1a; 
+    border: 1px solid #333; 
+    border-radius: var(--radius); 
+    overflow: hidden; 
+    display: flex; 
+    flex-direction: column; 
+}
+
 .block-item.owner-marc { border-top: 3px solid var(--accent-color); }
 .block-item.owner-gunnar { border-top: 3px solid var(--dj2-color); }
 
-.block-header { padding: 0 4px !important; background: rgba(255, 255, 255, 0.05); display: flex; align-items: center; min-height: 22px !important; }
-.block-header strong { font-size: 0.8rem; letter-spacing: 0.5px; }
+.block-header { 
+    padding: 0 10px; 
+    background: rgba(255, 255, 255, 0.05); 
+    display: flex; 
+    align-items: center; 
+    min-height: 36px; /* Deutlich besser für Desktop-Klicks */
+    border-bottom: 1px solid #333;
+}
+
+.block-header strong { 
+    font-size: 0.9rem; 
+    letter-spacing: 0.5px; 
+    color: #fff;
+}
 
 .block-content { padding: 2px !important; }
 
