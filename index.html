@@ -926,7 +926,7 @@ window.isAppReady = false; // Wir sind noch nicht bereit
             toggleBtn.classList.add('disabled');
             display.innerText = '0s';
         }
-        window.saveData();
+window.saveData(owner);
     };
 
     window.setupCrossfadeEvents = function(cardElement) {
@@ -1426,7 +1426,7 @@ window.triggerFolderSelection = async function(djId) {
         window.renderDJList(owner); 
     }
     
-    window.saveData();
+window.saveData(owner);
 };
 
 window.renderDJList = function(owner) {
@@ -1465,7 +1465,7 @@ window.renderDJList = function(owner) {
     window.applyUserStatesToUI(owner);
 
     // 4. Speichern
-    window.saveData(); 
+window.saveData(owner);
 };
 
 window.syncUIState = function(owner) {
@@ -1566,8 +1566,8 @@ function updateGlobalDiffUI() {
             evt.item.setAttribute('data-owner', currentUser);
             
             // Erst danach speichern
-            window.saveData(); 
-        },
+window.saveData(owner); 
+       },
         onMove: function (evt) {
             const isDraggingBlock = evt.dragged.classList.contains('block-item');
             const targetIsNested = evt.to.classList.contains('block-sortable-list');
@@ -1621,7 +1621,7 @@ function updateGlobalDiffUI() {
         const newTitle = prompt("Neuen Namen für den Block eingeben:", currentTitle);
         if (newTitle !== null && newTitle.trim() !== '') {
             titleEl.innerHTML = newTitle.trim() + (countSpan ? countSpan.outerHTML : '');
-            window.saveData();
+window.saveData(owner);
         }
     };
 
@@ -1647,7 +1647,7 @@ function updateGlobalDiffUI() {
             } else artistEl.innerText = newArtist.trim();
         } else if (artistEl) artistEl.remove();
         
-        window.saveData();
+window.saveData(owner);
     };
 
     // Ändere die Funktion so:
@@ -1658,7 +1658,7 @@ window.addNewBlockPrompt = function(owner) {
         
         // Jetzt übergeben wir den expliziten owner ('dj1' oder 'dj2')
         window.addBlockToBlocklistUI(name, [], 0, newId, owner); 
-        window.saveData(); 
+window.saveData(owner);
     }
 };
 
@@ -1749,7 +1749,7 @@ window.addNewBlockPrompt = function(owner) {
     input.value = ""; 
     
     // 4. Speichern
-    window.saveData();
+window.saveData(owner);
 };
 
     window.addBlockToBlocklistUI = function(title, songs, colorIdx, blockId, owner) {
@@ -1853,7 +1853,7 @@ window.addNewBlockPrompt = function(owner) {
                     const list = b.querySelector('.block-sortable-list');
                     if (countSpan && list) countSpan.innerText = ` (${list.children.length})`;
                 });
-                window.saveData();
+window.saveData(owner);
             },
             onMove: function (evt) { if (evt.dragged.classList.contains('block-item')) return false; }
         });
@@ -1867,7 +1867,7 @@ window.addNewBlockPrompt = function(owner) {
         let idx = (parseInt(el.dataset.colorIndex || 0) + 1) % folderColors.length;
         el.dataset.colorIndex = idx; 
         el.style.backgroundColor = folderColors[idx]; 
-        window.saveData();
+window.saveData(owner);
     };
 
     window.switchUser = function(user) {
@@ -2042,54 +2042,49 @@ onSnapshot(doc(db, "mojoblox", "set1_dj2"), (docSnap) => {
 
     // --- 2. SAVE DATA (GEFILTERT) ---
 
-window.saveData = async () => {
-    // 1. SICHERHEIT: Wenn die App noch lädt, darf nicht gespeichert werden!
+window.saveData = async (djId) => {
+    // 1. Sicherheit: App bereit?
     if (!window.isAppReady) {
-        console.warn("SICHERHEIT: Speichern abgebrochen: App ist noch nicht bereit.");
-
+        console.warn("Speichern abgebrochen: App ist noch nicht bereit.");
         return;
     }
 
-    if (currentUser === 'diff') return;
-
-    // 2. DOM lesen: Wir suchen jetzt in BEIDEN Listen nach .block-item
-    const elements = document.querySelectorAll('#dj1-list .block-item, #dj2-list .block-item');
-    
-    // 3. SICHERHEIT: Wenn wir absolut gar keine Elemente finden, könnte ein Ladefehler vorliegen.
-    // Aber Achtung: Wenn du bewusst eine leere Liste speichern willst, wäre das hier zu streng.
-    // Falls das UI bei dir "Lade Daten..." zeigt, schützt uns isAppReady oben.
-    if (elements.length === 0 && window.isAppReady) {
-        console.warn("HINWEIS: Keine Elemente gefunden, speichere leere Liste.");
+    // 2. Container finden
+    const container = document.getElementById(djId + '-container');
+    if (!container) {
+        console.error(`Container für ${djId} nicht gefunden.`);
+        return;
     }
 
-    const allItems = [...(window.dataDJ1 || []), ...(window.dataDJ2 || [])];
+    // 3. Datenquelle bestimmen (hier die Logik anpassen, wie deine Datenobjekte heißen)
+    // Wenn deine Daten in window.dataDj1 oder window.dataDj2 liegen:
+    const dataKey = 'data' + djId.charAt(0).toUpperCase() + djId.slice(1);
+    const allItems = window[dataKey] || [];
     const itemMap = new Map(allItems.map(i => [i.id, i]));
 
+    // 4. Elemente NUR in diesem Container sammeln
+    const elements = container.querySelectorAll('.block-item');
     const myFilteredList = [];
 
     elements.forEach(el => {
-        const owner = el.getAttribute('data-owner');
         const id = el.getAttribute('data-id');
-
-        // Wir sammeln nur die Items, die dem aktuellen User gehören
-        if (owner === currentUser) {
-            const originalItem = itemMap.get(id);
-            if (originalItem) {
-                myFilteredList.push(originalItem);
-            }
+        const originalItem = itemMap.get(id);
+        if (originalItem) {
+            myFilteredList.push(originalItem);
         }
     });
 
-    const docName = currentUser === 'dj1' ? "set1_dj1" : "set1_dj2";
+    // 5. Firebase Dokument-Name dynamisch erstellen
+    const docName = `set1_${djId}`; 
     
     try {
         await setDoc(doc(db, "mojoblox", docName), {
             blocklist: myFilteredList,
             timestamp: Date.now()
         });
-        console.log(`Daten für ${currentUser} wurden erfolgreich in Firebase gespeichert.`);
+        console.log(`Daten für ${djId} erfolgreich in ${docName} gespeichert.`);
     } catch (e) {
-        console.error("Fehler beim Speichern:", e);
+        console.error(`Fehler beim Speichern für ${djId}:`, e);
     }
 };
 
@@ -2574,8 +2569,8 @@ activeData.blocklist.forEach((item) => {
             
             document.body.classList.remove('lock-scroll');
             
-            window.saveData(); 
-            currentCardForPopup = null;
+window.saveData(owner); 
+           currentCardForPopup = null;
         }
     });
 
