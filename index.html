@@ -703,6 +703,30 @@ margin: 2px 0 5px 0 !important;}
         grid-column: auto;
     }
 }
+
+/* --- Symmetrie-Fix für das Layout --- */
+
+#main-content-wrapper {
+    display: flex;
+    gap: 20px;
+    width: 100%;
+    /* Verhindert, dass Elemente sich ungleichmäßig verschieben */
+    align-items: flex-start; 
+}
+
+/* Beide Spalten zwingen, genau 50% der Breite einzunehmen */
+.dj-column {
+    flex: 1; 
+    min-width: 0; /* Wichtig: Verhindert, dass sich die Spalte durch zu langen Text aufbläht */
+    box-sizing: border-box;
+}
+
+/* Sorgen, dass keine "versteckten" Ränder die Symmetrie zerstören */
+.dj-toolbar, .controls-wrapper, .drop-zone {
+    width: 100%;
+    margin: 0 !important;
+}
+        
     </style>
 </head>
 <body>
