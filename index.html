@@ -27,7 +27,7 @@
             --success-green: #2ecc71;
         }
 
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg-color); color: var(--text-color); margin: 0; user-select: none; touch-action: pan-y; overflow-x: hidden; padding-bottom: 70px; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg-color); color: var(--text-color); margin: 0; user-select: none; touch-action: pan-y; overflow-y: scroll; overflow-x: hidden; padding-bottom: 70px; }
 
         /* Wenn aktiv, wird das Scrollen der Liste verhindert */
         body.lock-scroll {
@@ -712,6 +712,7 @@ margin: 2px 0 5px 0 !important;}
     width: 100%;
     /* Verhindert, dass Elemente sich ungleichmäßig verschieben */
     align-items: flex-start; 
+    padding: 0 20px !important;
 }
 
 /* Beide Spalten zwingen, genau 50% der Breite einzunehmen */
