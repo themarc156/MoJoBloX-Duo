@@ -525,17 +525,6 @@ margin-bottom: 1px !important;
     margin-top: 10px;
 }
 
-.controls-wrapper {
-    width: 100%;
-    margin: 0 !important;
-    
-    /* WICHTIG: Auch hier Flexbox für vertikales Stapeln aktivieren */
-    display: flex;
-    flex-direction: column;
-    
-    /* ABSTAND: Fügt automatisch 8px Lücke zwischen Button und Song-Input ein */
-    gap: 8px; 
-}
 
 /* Linker Button: Neuer Block */
 .btn-add-block {
@@ -740,18 +729,16 @@ margin: 2px 0 5px 0 !important;}
     position: sticky;
     top: 0;
     z-index: 100;
-    background-color: #1a1a1a; /* Dein Hintergrund */
+    background-color: #1a1a1a;
     width: 100%;
     
-    /* WICHTIG: Flexbox für vertikales Stapeln aktivieren */
-    display: flex; 
-    flex-direction: column; 
+    /* DIESE ZEILEN SIND DIE LÖSUNG GEGEN ÜBERLAPPUNG: */
+    display: flex;
+    flex-direction: column;
+    gap: 10px; /* Dieser Abstand sorgt dafür, dass die Elemente nicht kleben */
     
-    /* ABSTAND: Fügt automatisch 10px Lücke zwischen Toolbar und Controls ein */
-    gap: 10px; 
-    
-    padding: 10px 5px; /* Etwas Luft an den Seiten und Oben/Unten */
-    border-bottom: 1px solid #333; /* Dezente Trennlinie */
+    padding: 10px 5px;
+    border-bottom: 1px solid #333;
 }
 
 /* 3. Die Liste füllt den Rest aus und scrollt */
