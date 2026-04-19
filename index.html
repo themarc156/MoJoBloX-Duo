@@ -526,10 +526,15 @@ margin-bottom: 1px !important;
 }
 
 .controls-wrapper {
-    display: flex;         /* WICHTIG: Das behalten! */
-    flex-direction: column; /* WICHTIG: Das behalten! */
-    gap: 5px;              /* WICHTIG: Das behalten! */
-    margin-top: 5px;       /* Das hier kannst du hinzufügen */
+    width: 100%;
+    margin: 0 !important;
+    
+    /* WICHTIG: Auch hier Flexbox für vertikales Stapeln aktivieren */
+    display: flex;
+    flex-direction: column;
+    
+    /* ABSTAND: Fügt automatisch 8px Lücke zwischen Button und Song-Input ein */
+    gap: 8px; 
 }
 
 /* Linker Button: Neuer Block */
@@ -738,12 +743,15 @@ margin: 2px 0 5px 0 !important;}
     background-color: #1a1a1a; /* Dein Hintergrund */
     width: 100%;
     
-    /* WICHTIG: Das hier löst das Stacking-Problem */
+    /* WICHTIG: Flexbox für vertikales Stapeln aktivieren */
     display: flex; 
     flex-direction: column; 
-    gap: 10px; /* Abstand zwischen Toolbar und den Controls */
-    padding: 10px 5px; /* Ein bisschen Luft an den Seiten */
-    border-bottom: 2px solid #333; /* Sichtbare Trennlinie */
+    
+    /* ABSTAND: Fügt automatisch 10px Lücke zwischen Toolbar und Controls ein */
+    gap: 10px; 
+    
+    padding: 10px 5px; /* Etwas Luft an den Seiten und Oben/Unten */
+    border-bottom: 1px solid #333; /* Dezente Trennlinie */
 }
 
 /* 3. Die Liste füllt den Rest aus und scrollt */
