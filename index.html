@@ -714,19 +714,35 @@ margin: 2px 0 5px 0 !important;}
     align-items: flex-start; 
 }
 
-/* Beide Spalten zwingen, genau 50% der Breite einzunehmen */
+/* 1. Spalten-Struktur (Symmetrie erzwingen) */
 .dj-column {
     flex: 1; 
-    min-width: 0; /* Wichtig: Verhindert, dass sich die Spalte durch zu langen Text aufbläht */
+    min-width: 0; 
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    /* Begrenzt die Spalte auf die Fensterhöhe, damit der innere Bereich scrollt */
+    height: calc(100vh - 60px); 
 }
 
-/* Sorgen, dass keine "versteckten" Ränder die Symmetrie zerstören */
-.dj-toolbar, .controls-wrapper, .drop-zone {
+/* 2. Sticky-Elemente (Toolbar & Controls bleiben oben) */
+.dj-toolbar, .controls-wrapper {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background-color: var(--bg-color); /* WICHTIG: Überdeckt die scrollenden Elemente */
     width: 100%;
     margin: 0 !important;
 }
-        
+
+/* 3. Scroll-Bereich (Hier rollt die Liste durch) */
+.drop-zone {
+    flex-grow: 1;
+    overflow-y: auto; /* Scrollbar erscheint nur hier */
+    width: 100%;
+    margin: 0 !important;
+    padding-bottom: 20px; /* Optionaler Abstand nach unten */
+}
     </style>
 </head>
 <body>
