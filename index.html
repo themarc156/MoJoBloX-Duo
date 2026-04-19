@@ -526,7 +526,10 @@ margin-bottom: 1px !important;
 }
 
 .controls-wrapper {
-    margin-top: 5px; /* Ein ganz kleiner Abstand zum Header */
+    display: flex;         /* WICHTIG: Das behalten! */
+    flex-direction: column; /* WICHTIG: Das behalten! */
+    gap: 5px;              /* WICHTIG: Das behalten! */
+    margin-top: 5px;       /* Das hier kannst du hinzufügen */
 }
 
 /* Linker Button: Neuer Block */
@@ -734,11 +737,13 @@ margin: 2px 0 5px 0 !important;}
     z-index: 100;
     background-color: #1a1a1a; /* Dein Hintergrund */
     width: 100%;
-    /* WICHTIG: Damit die Elemente untereinander gestapelt werden */
+    
+    /* WICHTIG: Das hier löst das Stacking-Problem */
     display: flex; 
     flex-direction: column; 
-    padding: 10px 0;
-    border-bottom: 1px solid #333; /* Trennlinie zur Liste, hilft bei der Sichtbarkeit */
+    gap: 10px; /* Abstand zwischen Toolbar und den Controls */
+    padding: 10px 5px; /* Ein bisschen Luft an den Seiten */
+    border-bottom: 2px solid #333; /* Sichtbare Trennlinie */
 }
 
 /* 3. Die Liste füllt den Rest aus und scrollt */
