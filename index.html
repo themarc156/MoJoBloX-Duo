@@ -2042,10 +2042,11 @@ onSnapshot(doc(db, "mojoblox", "set1_dj2"), (docSnap) => {
 
     // --- 2. SAVE DATA (GEFILTERT) ---
 
-// window.saveData = async () => {
+window.saveData = async () => {
     // 1. SICHERHEIT: Wenn die App noch lädt, darf nicht gespeichert werden!
     if (!window.isAppReady) {
         console.warn("SICHERHEIT: Speichern abgebrochen: App ist noch nicht bereit.");
+
         return;
     }
 
