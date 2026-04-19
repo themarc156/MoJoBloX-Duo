@@ -479,9 +479,10 @@ body.user-dj2 .song-card.is-playing { animation: atmen-orange 2s infinite ease-i
 /* Grid-Layout */
 #blocklist-container {
     display: grid; 
-    grid-template-columns: 1fr 1fr;
-    gap: var(--gap); /* Nutzt den definierten Abstand */
+    grid-template-columns: 1fr 1fr; /* Zwei gleich große Spalten */
+    gap: var(--gap);
     padding: var(--gap); 
+    width: 100%; /* WICHTIG: Erzwingt die volle Breite */
     align-items: flex-start;
 }
 
