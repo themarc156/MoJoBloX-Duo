@@ -102,50 +102,85 @@
     font-weight: bold;
 }
 
+/* Scrollbar für Chrome, Edge und Safari */
+.content-area::-webkit-scrollbar {
+    width: 8px; /* Schmaler machen */
+}
+
+.content-area::-webkit-scrollbar-track {
+    background: #1a1a1a; /* Gleiche Hintergrundfarbe wie dein Panel */
+}
+
+.content-area::-webkit-scrollbar-thumb {
+    background: #444; /* Dunkler Griff */
+    border-radius: 4px; /* Abgerundete Ecken */
+}
+
+.content-area::-webkit-scrollbar-thumb:hover {
+    background: #666; /* Heller beim Drüberfahren, damit man ihn findet */
+}
+
+/* Scrollbar für Firefox (Standard-Standard) */
+.content-area {
+    scrollbar-width: thin;
+    scrollbar-color: #444 #1a1a1a;
+}
+
+.block-count {
+    margin-left: auto; /* Schiebt den Counter nach rechts neben den Titel */
+    margin-right: 10px;
+    background: #333;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 0.75em;
+    color: var(--accent);
+    font-weight: bold;
+}
+
     </style>
 </head>
 <body>
 
 <div class="app-container">
     <div class="header-row">
-    <div class="dj-header-group">
-        <div class="header-main">
-            <h2>DJ Marc</h2>
-            <button class="folder-btn" onclick="selectMusicFolder('marc')" title="Musikordner wählen">📂</button>
-            <span id="status-marc" title="Ordner-Status">⚪</span>
-            <span id="count-marc" class="song-count">0 Songs</span> </div>
+        <div class="dj-header-group">
+            <div class="header-main">
+                <h2>DJ Marc</h2>
+                <button class="folder-btn" onclick="selectMusicFolder('marc')" title="Musikordner wählen">📂</button>
+                <span id="status-marc" title="Ordner-Status">⚪</span>
+                <span id="count-marc" class="song-count">0 Songs</span>
+            </div>
+            <div class="toolbar-panel">
+                <input type="file" id="inputMarc" style="display:none" multiple accept="audio/*" onchange="addSongs(this, 'content-dj1')">
+                <button onclick="document.getElementById('inputMarc').click()">🎵+</button>
+                <button onclick="addBlock('content-dj1')">📁+</button>
+                <button onclick="toggleEditMode('col-dj1')">✏️</button>
+                <button onclick="saveAsTemplate('dj1')">💾</button>
+                <button onclick="toggleFlatView('col-dj1')">👁️</button>
+                <button onclick="toggleAllBlocks('col-dj1')">↕️</button>
+            </div>
         </div>
-        <div class="toolbar-panel">
-            <input type="file" id="inputMarc" style="display:none" multiple accept="audio/*" onchange="addSongs(this, 'content-dj1')">
-            <button onclick="document.getElementById('inputMarc').click()">🎵+</button>
-            <button onclick="addBlock('content-dj1')">📁+</button>
-            <button onclick="toggleEditMode('col-dj1')">✏️</button>
-            <button onclick="saveAsTemplate('dj1')">💾</button>
-            <button onclick="toggleFlatView('col-dj1')">👁️</button>
-            <button onclick="toggleAllBlocks('col-dj1')">↕️</button>
+
+        <div class="logo-center"><img src="icon.png" alt="Logo"></div>
+
+        <div class="dj-header-group">
+            <div class="header-main">
+                <h2>DJ Gunnar</h2>
+                <button class="folder-btn" onclick="selectMusicFolder('gunnar')" title="Musikordner wählen">📂</button>
+                <span id="status-gunnar" title="Ordner-Status">⚪</span>
+                <span id="count-gunnar" class="song-count">0 Songs</span>
+            </div>
+            <div class="toolbar-panel">
+                <input type="file" id="inputGunnar" style="display:none" multiple accept="audio/*" onchange="addSongs(this, 'content-dj2')">
+                <button onclick="document.getElementById('inputGunnar').click()">🎵+</button>
+                <button onclick="addBlock('content-dj2')">📁+</button>
+                <button onclick="toggleEditMode('col-dj2')">✏️</button>
+                <button onclick="saveAsTemplate('dj2')">💾</button>
+                <button onclick="toggleFlatView('col-dj2')">👁️</button>
+                <button onclick="toggleAllBlocks('col-dj2')">↕️</button>
+            </div>
         </div>
     </div>
-
-    <div class="logo-center"><img src="icon.png" alt="Logo"></div>
-
-    <div class="dj-header-group">
-        <div class="header-main">
-            <h2>DJ Gunnar</h2>
-            <button class="folder-btn" onclick="selectMusicFolder('gunnar')" title="Musikordner wählen">📂</button>
-            <span id="status-gunnar" title="Ordner-Status">⚪</span>
-            <span id="count-gunnar" class="song-count">0 Songs</span> </div>
-        </div>
-        <div class="toolbar-panel">
-            <input type="file" id="inputGunnar" style="display:none" multiple accept="audio/*" onchange="addSongs(this, 'content-dj2')">
-            <button onclick="document.getElementById('inputGunnar').click()">🎵+</button>
-            <button onclick="addBlock('content-dj2')">📁+</button>
-            <button onclick="toggleEditMode('col-dj2')">✏️</button>
-            <button onclick="saveAsTemplate('dj2')">💾</button>
-            <button onclick="toggleFlatView('col-dj2')">👁️</button>
-            <button onclick="toggleAllBlocks('col-dj2')">↕️</button>
-        </div>
-    </div>
-</div>
 
     <div class="content-row">
         <div class="dj-column col-dj" id="col-dj1">
@@ -205,19 +240,24 @@ window.loadDJData = async (djId) => {
                 div.ondragend = (e) => { e.target.classList.remove('dragging'); };
                 
                 div.innerHTML = `
-                    <div class="block-header">
-                        <button class="toggle-btn" onclick="toggleSingleBlock(this)">▼</button>
-                        <strong>${item.title}</strong>
-                        <button class="delete-btn" onclick="deleteItem(this.closest('.block'))">❌</button>
-                    </div>
-                    <div class="song-list" ondragover="handleDragOver(event)"></div>`;
+                <div class="block-header">
+                    <button class="toggle-btn" onclick="toggleSingleBlock(this)">▼</button>
+                    <strong>${item.title}</strong>
+                    <span class="block-count">0</span>
+                    <button class="delete-btn" onclick="deleteItem(this.closest('.block'))">❌</button>
+                </div>
+                <div class="song-list" ondragover="handleDragOver(event)"></div>`;
                 
                 const songList = div.querySelector('.song-list');
                 // Songs im Block hinzufügen
                 item.songs.forEach(song => {
                     songList.appendChild(createSongElementFromData(song.title, djKey));
                 });
+                
                 container.appendChild(div);
+                
+                // --- WICHTIG: Block-Zähler initialisieren ---
+                updateBlockCount(div);
 
             } else if (item.type === 'song') {
                 // --- LOSEN SONG RENDERN ---
@@ -225,7 +265,7 @@ window.loadDJData = async (djId) => {
             }
         });
 
-        // --- WICHTIG: Zähler nach dem Laden aktualisieren ---
+        // --- Gesamtzähler nach dem Laden aktualisieren ---
         updateSongCount(djKey);
 
         console.log(`Set für ${djId} geladen (Mapping zu ${djKey}).`);
@@ -337,27 +377,35 @@ async function syncToFirebase(djId) {
 }
 
     function addBlock(targetId) {
-        const name = prompt("Name des Blocks:");
-        if (!name) return;
-        const container = document.getElementById(targetId);
-        const div = document.createElement('div');
-        div.className = 'block';
-        div.draggable = true;
-        div.ondragstart = (e) => { draggedElement = e.target; e.target.classList.add('dragging'); };
-        div.ondragend = (e) => { e.target.classList.remove('dragging'); };
-        div.innerHTML = `
-            <div class="block-header">
-                <button class="toggle-btn" onclick="toggleSingleBlock(this)">▼</button>
-                <strong>${name}</strong>
-<button class="delete-btn" onclick="deleteItem(this.closest('.block'))">❌</button>
-            </div>
-            <div class="song-list" ondragover="handleDragOver(event)"></div>`;
-        container.appendChild(div);
+    const name = prompt("Name des Blocks:");
+    if (!name) return;
+    
+    const container = document.getElementById(targetId);
+    const div = document.createElement('div');
+    div.className = 'block';
+    div.draggable = true;
+    div.ondragstart = (e) => { draggedElement = e.target; e.target.classList.add('dragging'); };
+    div.ondragend = (e) => { e.target.classList.remove('dragging'); };
+    
+    // HTML mit dem neuen Counter-Span
+    div.innerHTML = `
+        <div class="block-header">
+            <button class="toggle-btn" onclick="toggleSingleBlock(this)">▼</button>
+            <strong>${name}</strong>
+            <span class="block-count">0</span>
+            <button class="delete-btn" onclick="deleteItem(this.closest('.block'))">❌</button>
+        </div>
+        <div class="song-list" ondragover="handleDragOver(event)"></div>`;
+    
+    container.appendChild(div);
 
-        // Nach dem Hinzufügen: Auto-Save triggern
+    // --- WICHTIG: Zähler initialisieren ---
+    updateBlockCount(div);
+
+    // Auto-Save
     const djId = targetId.replace('content-', ''); 
     syncToFirebase(djId);
-    }
+}
 
 // Funktion zum Speichern eines Snapshots als Vorlage
 window.saveAsTemplate = async (djId) => {
@@ -397,20 +445,27 @@ window.saveAsTemplate = async (djId) => {
     }
 
 window.deleteItem = (element) => {
+    // 1. Suche den Block, FALLS das gelöschte Element in einem Block liegt
+    const parentBlock = element.closest('.block');
     const container = element.closest('.content-area');
+    
+    // 2. Element löschen
     element.remove();
     
     if (container) {
         const djId = container.id.replace('content-', '');
-        
-        // --- WICHTIG: Mapping für den Zähler ---
         const djKey = (djId === 'dj1') ? 'marc' : 'gunnar';
         
-        // 1. Sync zur Datenbank
+        // 3. Sync zur Datenbank
         syncToFirebase(djId);
         
-        // 2. Zähler sofort aktualisieren
+        // 4. Gesamtzähler (DJ) aktualisieren
         updateSongCount(djKey);
+        
+        // 5. WICHTIG: Block-Zähler aktualisieren, falls der Song in einem Block war
+        if (parentBlock) {
+            updateBlockCount(parentBlock);
+        }
     }
 };
 
@@ -566,6 +621,16 @@ function updateSongCount(djId) {
     const display = document.getElementById(`count-${djId}`);
     if (display) {
         display.innerText = `${count} Song${count !== 1 ? 's' : ''}`;
+    }
+}
+
+function updateBlockCount(blockElement) {
+    if (!blockElement) return;
+    const list = blockElement.querySelector('.song-list');
+    const count = list.querySelectorAll('.song-item').length;
+    const counterSpan = blockElement.querySelector('.block-count');
+    if (counterSpan) {
+        counterSpan.innerText = count;
     }
 }
 
