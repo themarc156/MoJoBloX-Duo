@@ -735,21 +735,28 @@ window.saveFadeTime = (inputElement) => {
 
 
 window.testTransition = async (btn) => {
-    // 1. Laufende Tests sofort stoppen, falls der User erneut klickt
-    if (activeTestAudio1) activeTestAudio1.pause();
-    if (activeTestAudio2) activeTestAudio2.pause();
+    console.log("--- Test-Übergang gestartet ---");
+
+    // 1. Laufende Tests stoppen
+    if (activeTestAudio1) { activeTestAudio1.pause(); activeTestAudio1 = null; }
+    if (activeTestAudio2) { activeTestAudio2.pause(); activeTestAudio2 = null; }
 
     const currentItem = btn.closest('.song-item');
     const nextItem = currentItem.nextElementSibling;
 
     if (!nextItem || !nextItem.classList.contains('song-item')) {
-        alert("Kein nachfolgender Song gefunden!");
+        console.error("Fehler: Kein nachfolgender Song gefunden!");
+        alert("Kein nachfolgender Song für den Übergang gefunden.");
         return;
     }
 
     const fadeInput = currentItem.querySelector('.fade-input');
     const fadeTime = parseInt(fadeInput.value) || 0;
     
+    // Debug: URLs prüfen
+    console.log("URL Song 1:", currentItem.dataset.url);
+    console.log("URL Song 2:", nextItem.dataset.url);
+
     // Audio-Objekte erstellen
     const audio1 = new Audio(currentItem.dataset.url);
     const audio2 = new Audio(nextItem.dataset.url);
@@ -758,29 +765,48 @@ window.testTransition = async (btn) => {
     activeTestAudio1 = audio1;
     activeTestAudio2 = audio2;
 
-    await Promise.all([
-        new Promise(r => audio1.onloadedmetadata = r),
-        new Promise(r => audio2.onloadedmetadata = r)
-    ]);
+    // Auf Metadaten warten mit Fehlerbehandlung
+    try {
+        await Promise.all([
+            new Promise((r, reject) => { 
+                audio1.onloadedmetadata = r; 
+                audio1.onerror = () => reject("Audio 1 konnte nicht geladen werden."); 
+            }),
+            new Promise((r, reject) => { 
+                audio2.onloadedmetadata = r; 
+                audio2.onerror = () => reject("Audio 2 konnte nicht geladen werden."); 
+            })
+        ]);
+        console.log("Metadaten geladen. Dauer Song 1:", audio1.duration);
+    } catch (e) {
+        console.error("Ladefehler:", e);
+        return;
+    }
 
-    const startPoint = Math.max(0, audio1.duration - 20);
+    // Dauer validieren
+    const duration = isNaN(audio1.duration) ? 0 : audio1.duration;
+    const startPoint = Math.max(0, duration - 20);
     audio1.currentTime = startPoint;
-audio1.play().catch(error => {
-    console.error("Audio 1 konnte nicht starten:", error);
-    alert("Browser hat das Abspielen blockiert. Hast du schon einmal irgendwo auf die Seite geklickt?");
-});
 
-    const delayBeforeStartSong2 = 20 - fadeTime;
+    console.log("Starte bei Sekunde:", startPoint);
+
+    // Play mit Catch-Block
+    audio1.play().catch(error => {
+        console.error("Audio 1 konnte nicht starten:", error);
+        alert("Autoplay blockiert. Bitte klicke einmal auf die Seite.");
+    });
+
+    const delayBeforeStartSong2 = Math.max(0, 20 - fadeTime);
+    console.log("Song 2 startet in:", delayBeforeStartSong2, "Sekunden");
 
     setTimeout(() => {
+        console.log("Song 2 startet!");
         audio2.volume = 0; 
         audio2.play();
 
         if (fadeTime === 0) {
-            // Sofortige Lautstärke, wenn kein Fade gewünscht ist
             audio2.volume = 1;
         } else {
-            // Fade-In Logik
             let vol = 0;
             const steps = 20;
             const fadeInterval = setInterval(() => {
@@ -789,11 +815,11 @@ audio1.play().catch(error => {
                 audio2.volume = vol;
             }, (fadeTime * 1000) / steps);
         }
-
     }, delayBeforeStartSong2 * 1000);
     
     // Aufräumen nach 20 Sekunden
     setTimeout(() => {
+        console.log("Test-Übergang beendet.");
         if(activeTestAudio1 === audio1) audio1.pause();
         if(activeTestAudio2 === audio2) audio2.pause();
     }, 20000);
