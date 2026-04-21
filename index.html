@@ -217,6 +217,9 @@
 <script type="module">
     let draggedElement = null;
     let activeFadeInput = null;
+    // Variable außerhalb der Funktion, um laufende Tests zu stoppen
+let activeTestAudio1 = null;
+let activeTestAudio2 = null;
 
 // Firebase Imports
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -729,9 +732,7 @@ window.saveFadeTime = (inputElement) => {
     console.log(`Fade-Time für Song in ${djId} auf ${val}s gesetzt.`);
 };
 
-// Variable außerhalb der Funktion, um laufende Tests zu stoppen
-let activeTestAudio1 = null;
-let activeTestAudio2 = null;
+
 
 window.testTransition = async (btn) => {
     // 1. Laufende Tests sofort stoppen, falls der User erneut klickt
@@ -764,7 +765,10 @@ window.testTransition = async (btn) => {
 
     const startPoint = Math.max(0, audio1.duration - 20);
     audio1.currentTime = startPoint;
-    audio1.play();
+audio1.play().catch(error => {
+    console.error("Audio 1 konnte nicht starten:", error);
+    alert("Browser hat das Abspielen blockiert. Hast du schon einmal irgendwo auf die Seite geklickt?");
+});
 
     const delayBeforeStartSong2 = 20 - fadeTime;
 
