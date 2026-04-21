@@ -227,11 +227,11 @@ function createSongElementFromData(title, djKey) {
     div.ondragend = (e) => { e.target.classList.remove('dragging'); };
     
     div.innerHTML = `
-        <div class="song-info" title="${title}">${title}</div>
-        <div class="controls-wrapper">
-            <button class="play-btn" onclick="playLocalSong('${title}', '${djKey}')">▶</button>
-            <button class="delete-btn" onclick="deleteItem(this.closest('.song-item'))">❌</button>
-        </div>`;
+    <div class="song-info" title="${title}">${title}</div>
+    <div class="controls-wrapper">
+        <button class="play-btn" onclick="toggleSong(this, '${title}', '${djKey}')">▶</button>
+        <button class="delete-btn" onclick="deleteItem(this.closest('.song-item'))">❌</button>
+    </div>`;
     return div;
 }
 
@@ -458,20 +458,40 @@ async function selectMusicFolder(djKey) {
     }
 }
 
-async function playLocalSong(title, djKey) {
+async function toggleSong(btn, title, djKey) {
+    // 1. Wenn der Button bereits spielt (Status "true"), dann stoppen
+    if (btn.dataset.isPlaying === "true") {
+        const audio = btn.dataset.audioObj;
+        audio.pause();
+        audio.currentTime = 0; // Zurück zum Anfang
+        btn.innerText = "▶";    // Icon wieder auf Play
+        btn.dataset.isPlaying = "false";
+        return;
+    }
+
+    // 2. Wenn gestoppt, dann starten
     const lib = djLibraries[djKey];
-    
     if (lib && lib.has(title)) {
         const fileHandle = lib.get(title);
         const file = await fileHandle.getFile();
         const url = URL.createObjectURL(file);
-        
         const audio = new Audio(url);
-        // Speicher wieder freigeben, wenn der Song zu Ende ist
-        audio.onended = () => URL.revokeObjectURL(url);
+
+        // Audio-Objekt und Status am Button speichern
+        btn.dataset.audioObj = audio;
+        btn.dataset.isPlaying = "true";
+        btn.innerText = "⏹"; // Icon auf Stop/Pause ändern
+
         audio.play();
+
+        // Wenn Song von alleine zu Ende ist, Button zurücksetzen
+        audio.onended = () => {
+            btn.innerText = "▶";
+            btn.dataset.isPlaying = "false";
+            URL.revokeObjectURL(url);
+        };
     } else {
-        alert(`Song "${title}" wurde nicht im ausgewählten Ordner gefunden.`);
+        alert("Song nicht gefunden. Bitte Ordner prüfen.");
     }
 }
 
@@ -489,6 +509,7 @@ window.handleDragOver = handleDragOver;
 window.createSongElementFromData = createSongElementFromData;
 window.loadDJData = loadDJData;
 window.selectMusicFolder = selectMusicFolder;
+window.toggleSong = toggleSong;
 
 </script>
 </body>
