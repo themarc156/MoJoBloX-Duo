@@ -296,14 +296,30 @@ async function syncToFirebase(djId) {
     }
 
     function addSongs(input, targetId) {
-        const container = document.getElementById(targetId);
-        Array.from(input.files).filter(f => f.type.startsWith('audio/')).forEach(file => { container.appendChild(createSongElement(file)); });
-        input.value = "";
-
-        // Nach dem Hinzufügen: Auto-Save triggern
+    const container = document.getElementById(targetId);
     const djId = targetId.replace('content-', ''); 
+    const djKey = (djId === 'dj1') ? 'marc' : 'gunnar';
+
+    Array.from(input.files)
+        .filter(f => f.type.startsWith('audio/'))
+        .forEach(file => {
+            const fileName = file.name.replace(/\.[^/.]+$/, ""); // Name ohne Endung
+
+            // --- HIER DIE PRÜFUNG ---
+            if (isSongAlreadyPresent(targetId, fileName)) {
+                console.warn(`Song "${fileName}" bereits in der Liste. Wird übersprungen.`);
+                return; // Abbruch für diesen spezifischen Song
+            }
+
+            // Hinzufügen, wenn nicht gefunden
+            container.appendChild(createSongElementFromData(fileName, djKey));
+        });
+
+    input.value = ""; // Input leeren
+
+    // Auto-Save triggern
     syncToFirebase(djId);
-    }
+}
 
     function addBlock(targetId) {
         const name = prompt("Name des Blocks:");
@@ -499,6 +515,20 @@ async function toggleSong(btn, title, djKey) {
     } else {
         alert("Song nicht im gewählten Ordner gefunden. Bitte Ordner prüfen.");
     }
+}
+
+function isSongAlreadyPresent(containerId, songTitle) {
+    const container = document.getElementById(containerId);
+    // Wir suchen alle Elemente mit der Klasse .song-info innerhalb dieses DJ-Containers
+    const existingSongs = container.querySelectorAll('.song-info');
+    
+    // Prüfen, ob einer der gefundenen Songs den gleichen Title hat
+    for (let song of existingSongs) {
+        if (song.getAttribute('title') === songTitle) {
+            return true; // Song wurde gefunden!
+        }
+    }
+    return false; // Song existiert noch nicht
 }
 
 // Funktionen für das HTML global sichtbar machen
