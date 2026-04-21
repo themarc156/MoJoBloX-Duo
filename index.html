@@ -459,39 +459,45 @@ async function selectMusicFolder(djKey) {
 }
 
 async function toggleSong(btn, title, djKey) {
-    // 1. Wenn der Button bereits spielt (Status "true"), dann stoppen
-    if (btn.dataset.isPlaying === "true") {
-        const audio = btn.dataset.audioObj;
-        audio.pause();
-        audio.currentTime = 0; // Zurück zum Anfang
-        btn.innerText = "▶";    // Icon wieder auf Play
-        btn.dataset.isPlaying = "false";
-        return;
+    // 1. Prüfen, ob eine Audio-Instanz existiert und ob sie gerade läuft
+    const existingAudio = btn.audioInstance;
+
+    if (existingAudio && !existingAudio.paused) {
+        // --- STOPPEN ---
+        existingAudio.pause();
+        existingAudio.currentTime = 0; // Zurück zum Start
+        btn.innerText = "▶";          // Icon wieder auf Play
+        return; // Funktion hier beenden
     }
 
-    // 2. Wenn gestoppt, dann starten
+    // 2. Falls eine alte Instanz existiert, aufräumen
+    if (existingAudio) {
+        URL.revokeObjectURL(existingAudio.src);
+    }
+
+    // 3. STARTEN
     const lib = djLibraries[djKey];
     if (lib && lib.has(title)) {
         const fileHandle = lib.get(title);
         const file = await fileHandle.getFile();
         const url = URL.createObjectURL(file);
-        const audio = new Audio(url);
+        
+        const newAudio = new Audio(url);
+        
+        // Audio-Objekt DIREKT als Eigenschaft an den Button hängen (NICHT in dataset!)
+        btn.audioInstance = newAudio;
+        btn.innerText = "⏹"; // Icon auf Stop
 
-        // Audio-Objekt und Status am Button speichern
-        btn.dataset.audioObj = audio;
-        btn.dataset.isPlaying = "true";
-        btn.innerText = "⏹"; // Icon auf Stop/Pause ändern
+        newAudio.play();
 
-        audio.play();
-
-        // Wenn Song von alleine zu Ende ist, Button zurücksetzen
-        audio.onended = () => {
+        // Wenn der Song von alleine zu Ende ist
+        newAudio.onended = () => {
             btn.innerText = "▶";
-            btn.dataset.isPlaying = "false";
             URL.revokeObjectURL(url);
+            btn.audioInstance = null; // Instanz löschen
         };
     } else {
-        alert("Song nicht gefunden. Bitte Ordner prüfen.");
+        alert("Song nicht im gewählten Ordner gefunden. Bitte Ordner prüfen.");
     }
 }
 
