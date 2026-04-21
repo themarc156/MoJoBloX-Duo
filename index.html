@@ -215,6 +215,7 @@
 </div>
 
 <script type="module">
+    window.songRegistry = new Map(); // Hier speichern wir alle geladenen Dateien
     let draggedElement = null;
     let activeFadeInput = null;
     // Variable außerhalb der Funktion, um laufende Tests zu stoppen
@@ -303,19 +304,22 @@ function createSongElementFromData(title, djKey) {
     const div = document.createElement('div');
     div.className = 'song-item';
     div.draggable = true;
+    
+    // WICHTIG: Speichere hier den djKey im Element. 
+    // Dann weiß testTransition später genau, wo die Datei liegt.
+    div.dataset.djKey = djKey; 
+
     div.ondragstart = (e) => { draggedElement = e.target; e.target.classList.add('dragging'); };
     div.ondragend = (e) => { e.target.classList.remove('dragging'); };
     
-    // Standard-Fade (kann später durch Datenbank-Wert ersetzt werden)
+    // FadeTime (falls du das später aus der DB lädst)
     const fadeTime = 0; 
 
     div.innerHTML = `
         <div class="song-info" title="${title}">${title}</div>
         <div class="controls-wrapper">
             <input type="number" class="fade-input" value="${fadeTime}" style="display:none">
-            
             <button class="fade-btn" onclick="openFadeOverlay(this)" title="Fade-In einstellen">⏱</button>
-            
             <button class="test-transition-btn" onclick="testTransition(this)" title="Übergang testen">🔁</button>
             <button class="play-btn" onclick="toggleSong(this, '${title}', '${djKey}')">▶</button>
             <button class="delete-btn" onclick="deleteItem(this.closest('.song-item'))">❌</button>
@@ -407,21 +411,22 @@ function toggleEditMode(colId) {
     Array.from(input.files)
         .filter(f => f.type.startsWith('audio/'))
         .forEach(file => {
-            const fileName = file.name.replace(/\.[^/.]+$/, ""); // Name ohne Endung
+            const fileName = file.name.replace(/\.[^/.]+$/, "");
 
-            // --- HIER DIE PRÜFUNG ---
+            // 1. In die Registry schreiben (Die zentrale Ablage für die Session)
+            window.songRegistry.set(fileName, file);
+
+            // 2. Prüfung
             if (isSongAlreadyPresent(targetId, fileName)) {
-                console.warn(`Song "${fileName}" bereits in der Liste. Wird übersprungen.`);
-                return; // Abbruch für diesen spezifischen Song
+                console.warn(`Song "${fileName}" bereits in der Liste.`);
+                return;
             }
 
-            // Hinzufügen, wenn nicht gefunden
+            // 3. Hinzufügen
             container.appendChild(createSongElementFromData(fileName, djKey));
         });
 
-    input.value = ""; // Input leeren
-
-    // Auto-Save triggern
+    input.value = "";
     updateSongCount(djKey);
     syncToFirebase(djId);
 }
@@ -737,92 +742,97 @@ window.saveFadeTime = (inputElement) => {
 window.testTransition = async (btn) => {
     console.log("--- Test-Übergang gestartet ---");
 
-    // 1. Laufende Tests stoppen
-    if (activeTestAudio1) { activeTestAudio1.pause(); activeTestAudio1 = null; }
-    if (activeTestAudio2) { activeTestAudio2.pause(); activeTestAudio2 = null; }
+    // 1. Cleanup-Helper: Stoppt Audio und gibt Speicher (Blob-URLs) frei
+    const cleanup = (audio) => {
+        if (audio) {
+            audio.pause();
+            if (audio.src && audio.src.startsWith('blob:')) {
+                URL.revokeObjectURL(audio.src);
+            }
+        }
+    };
+    
+    // Bestehende Tests sofort stoppen
+    cleanup(activeTestAudio1);
+    cleanup(activeTestAudio2);
 
     const currentItem = btn.closest('.song-item');
     const nextItem = currentItem.nextElementSibling;
+    const djKey = currentItem.dataset.djKey; // Holt den DJ (marc/gunnar)
 
     if (!nextItem || !nextItem.classList.contains('song-item')) {
-        console.error("Fehler: Kein nachfolgender Song gefunden!");
-        alert("Kein nachfolgender Song für den Übergang gefunden.");
+        alert("Kein nachfolgender Song gefunden!");
         return;
     }
 
-    const fadeInput = currentItem.querySelector('.fade-input');
-    const fadeTime = parseInt(fadeInput.value) || 0;
-    
-    // Debug: URLs prüfen
-    console.log("URL Song 1:", currentItem.dataset.url);
-    console.log("URL Song 2:", nextItem.dataset.url);
+    // 2. Dynamisches Laden aus djLibraries
+    const getAudioUrl = async (songTitle) => {
+        const lib = djLibraries[djKey]; // Greift auf die stabile Map zu
+        const handle = lib.get(songTitle);
+        if (!handle) throw new Error(`Datei "${songTitle}" in Bibliothek nicht gefunden.`);
+        const file = await handle.getFile();
+        return URL.createObjectURL(file);
+    };
 
-    // Audio-Objekte erstellen
-    const audio1 = new Audio(currentItem.dataset.url);
-    const audio2 = new Audio(nextItem.dataset.url);
-    
-    // Globale Referenzen speichern
-    activeTestAudio1 = audio1;
-    activeTestAudio2 = audio2;
-
-    // Auf Metadaten warten mit Fehlerbehandlung
     try {
+        const title1 = currentItem.querySelector('.song-info').innerText;
+        const title2 = nextItem.querySelector('.song-info').innerText;
+
+        const url1 = await getAudioUrl(title1);
+        const url2 = await getAudioUrl(title2);
+
+        const audio1 = new Audio(url1);
+        const audio2 = new Audio(url2);
+
+        activeTestAudio1 = audio1;
+        activeTestAudio2 = audio2;
+
+        // Warten bis Metadaten bereit sind
         await Promise.all([
-            new Promise((r, reject) => { 
-                audio1.onloadedmetadata = r; 
-                audio1.onerror = () => reject("Audio 1 konnte nicht geladen werden."); 
-            }),
-            new Promise((r, reject) => { 
-                audio2.onloadedmetadata = r; 
-                audio2.onerror = () => reject("Audio 2 konnte nicht geladen werden."); 
-            })
+            new Promise(r => audio1.onloadedmetadata = r),
+            new Promise(r => audio2.onloadedmetadata = r)
         ]);
-        console.log("Metadaten geladen. Dauer Song 1:", audio1.duration);
+
+        // Startpunkt berechnen
+        const duration = isNaN(audio1.duration) ? 0 : audio1.duration;
+        const startPoint = Math.max(0, duration - 20);
+        audio1.currentTime = startPoint;
+
+        audio1.play().catch(e => alert("Autoplay blockiert. Bitte einmal klicken."));
+
+        // Übergangs-Logik
+        const fadeInput = currentItem.querySelector('.fade-input');
+        const fadeTime = parseInt(fadeInput.value) || 0;
+        const delay = Math.max(0, 20 - fadeTime);
+
+        setTimeout(() => {
+            audio2.volume = 0;
+            audio2.play();
+
+            if (fadeTime === 0) {
+                audio2.volume = 1;
+            } else {
+                let vol = 0;
+                const steps = 20;
+                const interval = (fadeTime * 1000) / steps;
+                const fadeInterval = setInterval(() => {
+                    vol += 0.05;
+                    if (vol >= 1) { vol = 1; clearInterval(fadeInterval); }
+                    audio2.volume = vol;
+                }, interval);
+            }
+        }, delay * 1000);
+
+        // Aufräumen nach 20 Sekunden
+        setTimeout(() => {
+            cleanup(audio1);
+            cleanup(audio2);
+        }, 20000);
+
     } catch (e) {
-        console.error("Ladefehler:", e);
-        return;
+        console.error("Test-Übergang Fehler:", e);
+        alert("Fehler beim Laden: " + e.message);
     }
-
-    // Dauer validieren
-    const duration = isNaN(audio1.duration) ? 0 : audio1.duration;
-    const startPoint = Math.max(0, duration - 20);
-    audio1.currentTime = startPoint;
-
-    console.log("Starte bei Sekunde:", startPoint);
-
-    // Play mit Catch-Block
-    audio1.play().catch(error => {
-        console.error("Audio 1 konnte nicht starten:", error);
-        alert("Autoplay blockiert. Bitte klicke einmal auf die Seite.");
-    });
-
-    const delayBeforeStartSong2 = Math.max(0, 20 - fadeTime);
-    console.log("Song 2 startet in:", delayBeforeStartSong2, "Sekunden");
-
-    setTimeout(() => {
-        console.log("Song 2 startet!");
-        audio2.volume = 0; 
-        audio2.play();
-
-        if (fadeTime === 0) {
-            audio2.volume = 1;
-        } else {
-            let vol = 0;
-            const steps = 20;
-            const fadeInterval = setInterval(() => {
-                vol += 0.05;
-                if (vol >= 1) { vol = 1; clearInterval(fadeInterval); }
-                audio2.volume = vol;
-            }, (fadeTime * 1000) / steps);
-        }
-    }, delayBeforeStartSong2 * 1000);
-    
-    // Aufräumen nach 20 Sekunden
-    setTimeout(() => {
-        console.log("Test-Übergang beendet.");
-        if(activeTestAudio1 === audio1) audio1.pause();
-        if(activeTestAudio2 === audio2) audio2.pause();
-    }, 20000);
 };
 
 
