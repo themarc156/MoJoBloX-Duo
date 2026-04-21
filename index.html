@@ -156,61 +156,83 @@ window.loadDJData = async (djId) => {
         const container = document.getElementById(`content-${djId}`);
         container.innerHTML = ''; // Vorher leeren
         
-        // Durch die Blöcke in der DB loopen
-        data.blocklist.forEach(blockData => {
-            const div = document.createElement('div');
-            div.className = 'block';
-            div.draggable = true;
-            div.id = blockData.id || 'block-' + Date.now();
-            div.ondragstart = (e) => { draggedElement = e.target; e.target.classList.add('dragging'); };
-            div.ondragend = (e) => { e.target.classList.remove('dragging'); };
+        // Durch alle Items (Blöcke ODER Songs) in der DB loopen
+        data.blocklist.forEach(item => {
             
-            div.innerHTML = `
-                <div class="block-header">
-                    <button class="toggle-btn" onclick="toggleSingleBlock(this)">▼</button>
-                    <strong>${blockData.title}</strong>
-                    <button class="delete-btn" onclick="deleteItem(this.closest('.block'))">❌</button>
-                </div>
-                <div class="song-list" ondragover="handleDragOver(event)"></div>`;
-            
-            // Songs innerhalb des Blocks hinzufügen
-            const songList = div.querySelector('.song-list');
-            blockData.songs.forEach(song => {
-                const songEl = document.createElement('div');
-                songEl.className = 'song-item';
-                songEl.draggable = true;
-                songEl.ondragstart = (e) => { draggedElement = e.target; e.target.classList.add('dragging'); };
-                songEl.ondragend = (e) => { e.target.classList.remove('dragging'); };
-                songEl.innerHTML = `
-                    <div class="song-info" title="${song.title}">${song.title}</div>
-                    <div class="controls-wrapper">
-                        <button class="delete-btn" onclick="deleteItem(this.closest('.song-item'))">❌</button>
-                    </div>`;
-                songList.appendChild(songEl);
-            });
-            
-            container.appendChild(div);
+            if (item.type === 'block') {
+                // --- BLOCK RENDERN ---
+                const div = document.createElement('div');
+                div.className = 'block';
+                div.draggable = true;
+                div.id = item.id || 'block-' + Date.now();
+                div.ondragstart = (e) => { draggedElement = e.target; e.target.classList.add('dragging'); };
+                div.ondragend = (e) => { e.target.classList.remove('dragging'); };
+                
+                div.innerHTML = `
+                    <div class="block-header">
+                        <button class="toggle-btn" onclick="toggleSingleBlock(this)">▼</button>
+                        <strong>${item.title}</strong>
+                        <button class="delete-btn" onclick="deleteItem(this.closest('.block'))">❌</button>
+                    </div>
+                    <div class="song-list" ondragover="handleDragOver(event)"></div>`;
+                
+                const songList = div.querySelector('.song-list');
+                // Songs im Block hinzufügen
+                item.songs.forEach(song => {
+                    songList.appendChild(createSongElementForLoad(song.title));
+                });
+                container.appendChild(div);
+
+            } else if (item.type === 'song') {
+                // --- LOSEN SONG RENDERN ---
+                container.appendChild(createSongElementForLoad(item.title));
+            }
         });
         console.log(`Set für ${djId} geladen.`);
     }
 };
+
+// Hilfsfunktion zum Erstellen der Song-Elemente beim Laden
+function createSongElementForLoad(title) {
+    const div = document.createElement('div');
+    div.className = 'song-item';
+    div.draggable = true;
+    div.ondragstart = (e) => { draggedElement = e.target; e.target.classList.add('dragging'); };
+    div.ondragend = (e) => { e.target.classList.remove('dragging'); };
+    div.innerHTML = `
+        <div class="song-info" title="${title}">${title}</div>
+        <div class="controls-wrapper">
+            <button class="delete-btn" onclick="deleteItem(this.closest('.song-item'))">❌</button>
+        </div>`;
+    return div;
+}
+
+
 
 // Hilfsfunktion zum Auslesen der aktuellen Daten pro DJ
 function getDOMData(djId) {
     const container = document.getElementById(`content-${djId}`);
     const data = { blocklist: [], timestamp: Date.now() };
 
-    container.querySelectorAll('.block').forEach(block => {
-        const songs = Array.from(block.querySelectorAll('.song-item')).map(song => ({
-            title: song.querySelector('.song-info').innerText
-        }));
-        
-        data.blocklist.push({
-            type: 'block',
-            id: block.id,
-            title: block.querySelector('strong').innerText,
-            songs: songs
-        });
+    // Alle direkten Kinder durchgehen (Blöcke oder einzelne Songs)
+    container.querySelectorAll(':scope > .block, :scope > .song-item').forEach(el => {
+        if (el.classList.contains('block')) {
+            const songs = Array.from(el.querySelectorAll('.song-item')).map(song => ({
+                title: song.querySelector('.song-info').innerText
+            }));
+            data.blocklist.push({
+                type: 'block',
+                id: el.id,
+                title: el.querySelector('strong').innerText,
+                songs: songs
+            });
+        } else if (el.classList.contains('song-item')) {
+            // Loser Song speichern
+            data.blocklist.push({
+                type: 'song',
+                title: el.querySelector('.song-info').innerText
+            });
+        }
     });
     return data;
 }
@@ -377,7 +399,7 @@ window.addEventListener('DOMContentLoaded', () => {
     loadDJData('dj2');
 });
 
-// Funktionen für das HTML global sichtbar machen
+
 // Funktionen für das HTML global sichtbar machen
 window.addSongs = addSongs;
 window.addBlock = addBlock;
@@ -389,6 +411,8 @@ window.toggleSingleBlock = toggleSingleBlock;
 window.togglePlay = togglePlay;
 window.saveAsTemplate = saveAsTemplate;
 window.handleDragOver = handleDragOver;
+window.createSongElementFromData = createSongElementFromData;
+window.loadDJData = loadDJData;
 
 </script>
 </body>
