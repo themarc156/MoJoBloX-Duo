@@ -79,40 +79,63 @@
         .col-dj.flat-view .block-header { display: none; }
         .col-dj.flat-view .block { background: transparent; border: none; margin: 0; }
         .col-dj.flat-view .song-list { display: block !important; padding: 0; }
+
+        .header-main {
+    display: flex;
+    align-items: center; /* Zentriert Namen, Icon und Statuspunkt */
+    gap: 10px;           /* Abstand zwischen den Elementen */
+    margin-bottom: 5px;  /* Abstand zur Toolbar darunter */
+}
+
+.folder-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 0;
+}
     </style>
 </head>
 <body>
 
 <div class="app-container">
     <div class="header-row">
-        <div class="dj-header-group">
+    <div class="dj-header-group">
+        <div class="header-main">
             <h2>DJ Marc</h2>
-            <div class="toolbar-panel">
-                <input type="file" id="inputMarc" style="display:none" multiple accept="audio/*" onchange="addSongs(this, 'content-dj1')">
-                <button onclick="document.getElementById('inputMarc').click()">🎵+</button>
-                <button onclick="addBlock('content-dj1')">📁+</button>
-                <button onclick="toggleEditMode('col-dj1')">✏️</button>
-<button onclick="saveAsTemplate('dj1')">💾</button>
-                <button onclick="toggleFlatView('col-dj1')">👁️</button>
-<button onclick="toggleAllBlocks('col-dj1')">↕️</button>
-            </div>
+            <button class="folder-btn" onclick="selectMusicFolder('marc')" title="Musikordner wählen">📂</button>
+            <span id="status-marc" title="Ordner-Status">⚪</span>
         </div>
-
-        <div class="logo-center"><img src="icon.png" alt="Logo"></div>
-
-        <div class="dj-header-group">
-            <h2>DJ Gunnar</h2>
-            <div class="toolbar-panel">
-                <input type="file" id="inputGunnar" style="display:none" multiple accept="audio/*" onchange="addSongs(this, 'content-dj2')">
-                <button onclick="document.getElementById('inputGunnar').click()">🎵+</button>
-                <button onclick="addBlock('content-dj2')">📁+</button>
-                <button onclick="toggleEditMode('col-dj2')">✏️</button>
-<button onclick="saveAsTemplate('dj2')">💾</button>
-<button onclick="toggleFlatView('col-dj2')">👁️</button>
-<button onclick="toggleAllBlocks('col-dj2')">↕️</button>
-            </div>
+        <div class="toolbar-panel">
+            <input type="file" id="inputMarc" style="display:none" multiple accept="audio/*" onchange="addSongs(this, 'content-dj1')">
+            <button onclick="document.getElementById('inputMarc').click()">🎵+</button>
+            <button onclick="addBlock('content-dj1')">📁+</button>
+            <button onclick="toggleEditMode('col-dj1')">✏️</button>
+            <button onclick="saveAsTemplate('dj1')">💾</button>
+            <button onclick="toggleFlatView('col-dj1')">👁️</button>
+            <button onclick="toggleAllBlocks('col-dj1')">↕️</button>
         </div>
     </div>
+
+    <div class="logo-center"><img src="icon.png" alt="Logo"></div>
+
+    <div class="dj-header-group">
+        <div class="header-main">
+            <h2>DJ Gunnar</h2>
+            <button class="folder-btn" onclick="selectMusicFolder('gunnar')" title="Musikordner wählen">📂</button>
+            <span id="status-gunnar" title="Ordner-Status">⚪</span>
+        </div>
+        <div class="toolbar-panel">
+            <input type="file" id="inputGunnar" style="display:none" multiple accept="audio/*" onchange="addSongs(this, 'content-dj2')">
+            <button onclick="document.getElementById('inputGunnar').click()">🎵+</button>
+            <button onclick="addBlock('content-dj2')">📁+</button>
+            <button onclick="toggleEditMode('col-dj2')">✏️</button>
+            <button onclick="saveAsTemplate('dj2')">💾</button>
+            <button onclick="toggleFlatView('col-dj2')">👁️</button>
+            <button onclick="toggleAllBlocks('col-dj2')">↕️</button>
+        </div>
+    </div>
+</div>
 
     <div class="content-row">
         <div class="dj-column col-dj" id="col-dj1">
@@ -151,6 +174,9 @@ window.loadDJData = async (djId) => {
     const docRef = doc(db, "mojoblox", `set_${djId}`);
     const docSnap = await getDoc(docRef);
     
+    // Mapping: Welches djId gehört zu welchem Benutzer?
+    const djKey = (djId === 'dj1') ? 'marc' : 'gunnar'; 
+    
     if (docSnap.exists()) {
         const data = docSnap.data();
         const container = document.getElementById(`content-${djId}`);
@@ -177,31 +203,33 @@ window.loadDJData = async (djId) => {
                     <div class="song-list" ondragover="handleDragOver(event)"></div>`;
                 
                 const songList = div.querySelector('.song-list');
-                // Songs im Block hinzufügen
+                // Songs im Block hinzufügen (mit djKey!)
                 item.songs.forEach(song => {
-                    songList.appendChild(createSongElementForLoad(song.title));
+                    songList.appendChild(createSongElementFromData(song.title, djKey));
                 });
                 container.appendChild(div);
 
             } else if (item.type === 'song') {
-                // --- LOSEN SONG RENDERN ---
-                container.appendChild(createSongElementForLoad(item.title));
+                // --- LOSEN SONG RENDERN (mit djKey!) ---
+                container.appendChild(createSongElementFromData(item.title, djKey));
             }
         });
-        console.log(`Set für ${djId} geladen.`);
+        console.log(`Set für ${djId} geladen (Mapping zu ${djKey}).`);
     }
 };
 
 // Hilfsfunktion zum Erstellen der Song-Elemente beim Laden
-function createSongElementForLoad(title) {
+function createSongElementFromData(title, djKey) {
     const div = document.createElement('div');
     div.className = 'song-item';
     div.draggable = true;
     div.ondragstart = (e) => { draggedElement = e.target; e.target.classList.add('dragging'); };
     div.ondragend = (e) => { e.target.classList.remove('dragging'); };
+    
     div.innerHTML = `
         <div class="song-info" title="${title}">${title}</div>
         <div class="controls-wrapper">
+            <button class="play-btn" onclick="playLocalSong('${title}', '${djKey}')">▶</button>
             <button class="delete-btn" onclick="deleteItem(this.closest('.song-item'))">❌</button>
         </div>`;
     return div;
@@ -399,6 +427,53 @@ window.addEventListener('DOMContentLoaded', () => {
     loadDJData('dj2');
 });
 
+// Hier speichern wir die Bibliotheken (Mapping: Dateiname -> FileHandle)
+const djLibraries = {
+    marc: new Map(),
+    gunnar: new Map()
+};
+
+async function selectMusicFolder(djKey) {
+    try {
+        const dirHandle = await window.showDirectoryPicker();
+        const lib = djLibraries[djKey];
+        
+        lib.clear(); // Alte Bibliothek leeren
+        
+        for await (const entry of dirHandle.values()) {
+            // Nur Audio-Dateien indexieren
+            if (entry.kind === 'file' && entry.name.match(/\.(mp3|wav|ogg|flac|m4a)$/i)) {
+                const cleanName = entry.name.replace(/\.[^/.]+$/, "");
+                lib.set(cleanName, entry);
+            }
+        }
+        
+        // Status-Icon auf grün setzen
+        const statusSpan = document.getElementById(`status-${djKey}`);
+        if(statusSpan) statusSpan.innerText = "🟢";
+        
+        alert(`Bibliothek für ${djKey} geladen: ${lib.size} Songs gefunden.`);
+    } catch (err) {
+        console.error("Ordnerzugriff abgebrochen:", err);
+    }
+}
+
+async function playLocalSong(title, djKey) {
+    const lib = djLibraries[djKey];
+    
+    if (lib && lib.has(title)) {
+        const fileHandle = lib.get(title);
+        const file = await fileHandle.getFile();
+        const url = URL.createObjectURL(file);
+        
+        const audio = new Audio(url);
+        // Speicher wieder freigeben, wenn der Song zu Ende ist
+        audio.onended = () => URL.revokeObjectURL(url);
+        audio.play();
+    } else {
+        alert(`Song "${title}" wurde nicht im ausgewählten Ordner gefunden.`);
+    }
+}
 
 // Funktionen für das HTML global sichtbar machen
 window.addSongs = addSongs;
@@ -413,6 +488,7 @@ window.saveAsTemplate = saveAsTemplate;
 window.handleDragOver = handleDragOver;
 window.createSongElementFromData = createSongElementFromData;
 window.loadDJData = loadDJData;
+window.selectMusicFolder = selectMusicFolder;
 
 </script>
 </body>
