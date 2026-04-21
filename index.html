@@ -137,6 +137,28 @@
     font-weight: bold;
 }
 
+/* Zeigt an, dass der Text im Edit-Modus klickbar ist */
+.col-dj.edit-mode .block-title {
+    cursor: text;
+    border: 1px dashed #666;
+    padding: 0 4px;
+    border-radius: 3px;
+}
+
+/* Optional: Hintergrund beim Hover im Edit-Modus */
+.col-dj.edit-mode .block-title:hover {
+    background: #444;
+}
+
+.fade-btn {
+    background: #444; 
+    color: var(--accent); 
+    border: none; 
+    padding: 2px 6px; 
+    cursor: pointer; 
+    border-radius: 3px;
+}
+
     </style>
 </head>
 <body>
@@ -242,7 +264,7 @@ window.loadDJData = async (djId) => {
                 div.innerHTML = `
                 <div class="block-header">
                     <button class="toggle-btn" onclick="toggleSingleBlock(this)">▼</button>
-                    <strong>${item.title}</strong>
+<span class="block-title" contenteditable="false" onblur="handleTitleChange(this)">${item.title}</span>
                     <span class="block-count">0</span>
                     <button class="delete-btn" onclick="deleteItem(this.closest('.block'))">❌</button>
                 </div>
@@ -280,12 +302,20 @@ function createSongElementFromData(title, djKey) {
     div.ondragstart = (e) => { draggedElement = e.target; e.target.classList.add('dragging'); };
     div.ondragend = (e) => { e.target.classList.remove('dragging'); };
     
+    // Standard-Fade (kann später durch Datenbank-Wert ersetzt werden)
+    const fadeTime = 0; 
+
     div.innerHTML = `
-    <div class="song-info" title="${title}">${title}</div>
-    <div class="controls-wrapper">
-        <button class="play-btn" onclick="toggleSong(this, '${title}', '${djKey}')">▶</button>
-        <button class="delete-btn" onclick="deleteItem(this.closest('.song-item'))">❌</button>
-    </div>`;
+        <div class="song-info" title="${title}">${title}</div>
+        <div class="controls-wrapper">
+            <input type="number" class="fade-input" value="${fadeTime}" style="display:none">
+            
+            <button class="fade-btn" onclick="openFadeOverlay(this)" title="Fade-In einstellen">⏱</button>
+            
+            <button class="test-transition-btn" onclick="testTransition(this)" title="Übergang testen">🔁</button>
+            <button class="play-btn" onclick="toggleSong(this, '${title}', '${djKey}')">▶</button>
+            <button class="delete-btn" onclick="deleteItem(this.closest('.song-item'))">❌</button>
+        </div>`;
     return div;
 }
 
@@ -329,8 +359,21 @@ async function syncToFirebase(djId) {
 }
 
     function toggleFlatView(colId) { document.getElementById(colId).classList.toggle('flat-view'); }
-    function toggleEditMode(colId) { document.getElementById(colId).classList.toggle('edit-mode'); }
+function toggleEditMode(colId) {
+    const column = document.getElementById(colId);
     
+    // 1. Die CSS-Klasse umschalten
+    column.classList.toggle('edit-mode');
+    
+    // 2. Prüfen, ob wir uns jetzt im Edit-Modus befinden
+    const isEditing = column.classList.contains('edit-mode');
+    
+    // 3. Alle Titel in dieser Spalte finden und bearbeitbar machen
+    const titles = column.querySelectorAll('.block-title');
+    titles.forEach(title => {
+        title.contentEditable = isEditing;
+    });
+}    
     function toggleAllBlocks(colId) {
         const container = document.getElementById(colId);
         const lists = container.querySelectorAll('.song-list');
@@ -428,21 +471,36 @@ window.saveAsTemplate = async (djId) => {
 };
 
     function createSongElement(file) {
-        const div = document.createElement('div');
-        div.className = 'song-item';
-        div.draggable = true;
-        div.ondragstart = (e) => { draggedElement = e.target; e.target.classList.add('dragging'); };
-        div.ondragend = (e) => { e.target.classList.remove('dragging'); };
-        const url = URL.createObjectURL(file);
-        const name = file.name.replace(/\.[^/.]+$/, "");
-        div.innerHTML = `
-            <div class="song-info" title="${name}">${name}</div>
-            <div class="controls-wrapper">
-                <button class="play-btn" onclick="togglePlay(this, '${url}')">▶</button>
-<button class="delete-btn" onclick="deleteItem(this.closest('.song-item'))">❌</button>
-            </div>`;
-        return div;
-    }
+    const div = document.createElement('div');
+    div.className = 'song-item';
+    div.draggable = true;
+    
+    // URL speichern, damit wir sie für den Übergangstest abrufen können
+    const url = URL.createObjectURL(file);
+    div.dataset.url = url;
+
+    div.ondragstart = (e) => { draggedElement = e.target; e.target.classList.add('dragging'); };
+    div.ondragend = (e) => { e.target.classList.remove('dragging'); };
+    
+    const name = file.name.replace(/\.[^/.]+$/, "");
+    
+    // Standardwert für Fade (könnte später durch DB-Daten ersetzt werden)
+    const fadeTime = 0; 
+
+    div.innerHTML = `
+        <div class="song-info" title="${name}">${name}</div>
+        <div class="controls-wrapper">
+            <div class="fade-control">
+                <input type="number" class="fade-input" value="${fadeTime}" min="0" max="10" 
+                       onchange="saveFadeTime(this)" title="Fade-In Dauer (Sek.)">
+                <span>s</span>
+            </div>
+            <button class="test-transition-btn" onclick="testTransition(this)" title="Übergang testen">🔁</button>
+            <button class="play-btn" onclick="togglePlay(this, '${url}')">▶</button>
+            <button class="delete-btn" onclick="deleteItem(this.closest('.song-item'))">❌</button>
+        </div>`;
+    return div;
+}
 
 window.deleteItem = (element) => {
     // 1. Suche den Block, FALLS das gelöschte Element in einem Block liegt
@@ -634,6 +692,134 @@ function updateBlockCount(blockElement) {
     }
 }
 
+window.handleTitleChange = (element) => {
+    // Hol dir die ID der Spalte, um die richtige DB-Struktur zu finden
+    const container = element.closest('.content-area');
+    if (container) {
+        const djId = container.id.replace('content-', '');
+        
+        // Auto-Save triggern (deine Sync-Funktion sollte den aktuellen 
+        // Zustand des gesamten Containers neu in Firebase speichern)
+        syncToFirebase(djId); 
+        console.log("Block umbenannt und gespeichert.");
+    }
+};
+
+window.saveFadeTime = (inputElement) => {
+    // 1. Wert als Zahl speichern
+    let val = parseInt(inputElement.value);
+    
+    // Sicherheit: Wert zwischen 0 und 10 halten
+    if (val < 0) val = 0;
+    if (val > 10) val = 10;
+    inputElement.value = val;
+
+    // 2. DJ-Kontext finden (um zu wissen, wohin wir syncen sollen)
+    const container = inputElement.closest('.content-area');
+    if (!container) return;
+    
+    const djId = container.id.replace('content-', '');
+    
+    // 3. Datenbank-Sync auslösen
+    // Da deine syncToFirebase-Funktion den DOM liest, 
+    // ist der neue Wert jetzt automatisch im Sync enthalten.
+    syncToFirebase(djId);
+    
+    console.log(`Fade-Time für Song in ${djId} auf ${val}s gesetzt.`);
+};
+
+// Variable außerhalb der Funktion, um laufende Tests zu stoppen
+let activeTestAudio1 = null;
+let activeTestAudio2 = null;
+
+window.testTransition = async (btn) => {
+    // 1. Laufende Tests sofort stoppen, falls der User erneut klickt
+    if (activeTestAudio1) activeTestAudio1.pause();
+    if (activeTestAudio2) activeTestAudio2.pause();
+
+    const currentItem = btn.closest('.song-item');
+    const nextItem = currentItem.nextElementSibling;
+
+    if (!nextItem || !nextItem.classList.contains('song-item')) {
+        alert("Kein nachfolgender Song gefunden!");
+        return;
+    }
+
+    const fadeInput = currentItem.querySelector('.fade-input');
+    const fadeTime = parseInt(fadeInput.value) || 0;
+    
+    // Audio-Objekte erstellen
+    const audio1 = new Audio(currentItem.dataset.url);
+    const audio2 = new Audio(nextItem.dataset.url);
+    
+    // Globale Referenzen speichern
+    activeTestAudio1 = audio1;
+    activeTestAudio2 = audio2;
+
+    await Promise.all([
+        new Promise(r => audio1.onloadedmetadata = r),
+        new Promise(r => audio2.onloadedmetadata = r)
+    ]);
+
+    const startPoint = Math.max(0, audio1.duration - 20);
+    audio1.currentTime = startPoint;
+    audio1.play();
+
+    const delayBeforeStartSong2 = 20 - fadeTime;
+
+    setTimeout(() => {
+        audio2.volume = 0; 
+        audio2.play();
+
+        if (fadeTime === 0) {
+            // Sofortige Lautstärke, wenn kein Fade gewünscht ist
+            audio2.volume = 1;
+        } else {
+            // Fade-In Logik
+            let vol = 0;
+            const steps = 20;
+            const fadeInterval = setInterval(() => {
+                vol += 0.05;
+                if (vol >= 1) { vol = 1; clearInterval(fadeInterval); }
+                audio2.volume = vol;
+            }, (fadeTime * 1000) / steps);
+        }
+
+    }, delayBeforeStartSong2 * 1000);
+    
+    // Aufräumen nach 20 Sekunden
+    setTimeout(() => {
+        if(activeTestAudio1 === audio1) audio1.pause();
+        if(activeTestAudio2 === audio2) audio2.pause();
+    }, 20000);
+};
+
+let activeFadeInput = null;
+
+// Öffnet das Overlay
+window.openFadeOverlay = (btn) => {
+    const songItem = btn.closest('.song-item');
+    activeFadeInput = songItem.querySelector('.fade-input');
+    
+    // Slider-Wert setzen
+    const val = activeFadeInput.value || 0;
+    document.getElementById('fade-slider').value = val;
+    document.getElementById('fade-value-display').innerText = val;
+    
+    document.getElementById('fade-overlay').style.display = 'flex';
+};
+
+// Speichert den Wert
+window.saveFadeFromOverlay = () => {
+    const val = document.getElementById('fade-slider').value;
+    if (activeFadeInput) {
+        activeFadeInput.value = val;
+        // Speichert und synced direkt
+        saveFadeTime(activeFadeInput);
+    }
+    document.getElementById('fade-overlay').style.display = 'none';
+};
+
 // Funktionen für das HTML global sichtbar machen
 window.addSongs = addSongs;
 window.addBlock = addBlock;
@@ -649,7 +835,19 @@ window.createSongElementFromData = createSongElementFromData;
 window.loadDJData = loadDJData;
 window.selectMusicFolder = selectMusicFolder;
 window.toggleSong = toggleSong;
+window.openFadeOverlay = openFadeOverlay;
+window.saveFadeFromOverlay = saveFadeFromOverlay;
 
 </script>
+
+<div id="fade-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center;">
+    <div style="background: #2a2a2a; padding: 20px; border-radius: 10px; text-align: center; color: white;">
+        <h3>Fade-In Zeit (0-10s)</h3>
+        <input type="range" id="fade-slider" min="0" max="10" step="1" value="0" oninput="document.getElementById('fade-value-display').innerText = this.value">
+        <p><span id="fade-value-display">0</span> Sekunden</p>
+        <button onclick="saveFadeFromOverlay()">Speichern</button>
+    </div>
+</div>
+
 </body>
 </html>
