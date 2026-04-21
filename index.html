@@ -94,6 +94,14 @@
     font-size: 1.2rem;
     padding: 0;
 }
+
+.song-count {
+    margin-left: 10px;
+    font-size: 0.9rem;
+    color: #666;
+    font-weight: bold;
+}
+
     </style>
 </head>
 <body>
@@ -105,6 +113,7 @@
             <h2>DJ Marc</h2>
             <button class="folder-btn" onclick="selectMusicFolder('marc')" title="Musikordner wählen">📂</button>
             <span id="status-marc" title="Ordner-Status">⚪</span>
+            <span id="count-marc" class="song-count">0 Songs</span> </div>
         </div>
         <div class="toolbar-panel">
             <input type="file" id="inputMarc" style="display:none" multiple accept="audio/*" onchange="addSongs(this, 'content-dj1')">
@@ -124,6 +133,7 @@
             <h2>DJ Gunnar</h2>
             <button class="folder-btn" onclick="selectMusicFolder('gunnar')" title="Musikordner wählen">📂</button>
             <span id="status-gunnar" title="Ordner-Status">⚪</span>
+            <span id="count-gunnar" class="song-count">0 Songs</span> </div>
         </div>
         <div class="toolbar-panel">
             <input type="file" id="inputGunnar" style="display:none" multiple accept="audio/*" onchange="addSongs(this, 'content-dj2')">
@@ -203,17 +213,21 @@ window.loadDJData = async (djId) => {
                     <div class="song-list" ondragover="handleDragOver(event)"></div>`;
                 
                 const songList = div.querySelector('.song-list');
-                // Songs im Block hinzufügen (mit djKey!)
+                // Songs im Block hinzufügen
                 item.songs.forEach(song => {
                     songList.appendChild(createSongElementFromData(song.title, djKey));
                 });
                 container.appendChild(div);
 
             } else if (item.type === 'song') {
-                // --- LOSEN SONG RENDERN (mit djKey!) ---
+                // --- LOSEN SONG RENDERN ---
                 container.appendChild(createSongElementFromData(item.title, djKey));
             }
         });
+
+        // --- WICHTIG: Zähler nach dem Laden aktualisieren ---
+        updateSongCount(djKey);
+
         console.log(`Set für ${djId} geladen (Mapping zu ${djKey}).`);
     }
 };
@@ -318,6 +332,7 @@ async function syncToFirebase(djId) {
     input.value = ""; // Input leeren
 
     // Auto-Save triggern
+    updateSongCount(djKey);
     syncToFirebase(djId);
 }
 
@@ -381,13 +396,21 @@ window.saveAsTemplate = async (djId) => {
         return div;
     }
 
-// Diese Funktion ersetzt das direkte .remove()
 window.deleteItem = (element) => {
     const container = element.closest('.content-area');
     element.remove();
+    
     if (container) {
         const djId = container.id.replace('content-', '');
+        
+        // --- WICHTIG: Mapping für den Zähler ---
+        const djKey = (djId === 'dj1') ? 'marc' : 'gunnar';
+        
+        // 1. Sync zur Datenbank
         syncToFirebase(djId);
+        
+        // 2. Zähler sofort aktualisieren
+        updateSongCount(djKey);
     }
 };
 
@@ -529,6 +552,21 @@ function isSongAlreadyPresent(containerId, songTitle) {
         }
     }
     return false; // Song existiert noch nicht
+}
+
+function updateSongCount(djId) {
+    // Mapping von DJ-Key auf Container-ID
+    const containerId = (djId === 'marc') ? 'content-dj1' : 'content-dj2';
+    const container = document.getElementById(containerId);
+    
+    // Zählt alle .song-item Klassen im Container
+    const count = container.querySelectorAll('.song-item').length;
+    
+    // Anzeige aktualisieren
+    const display = document.getElementById(`count-${djId}`);
+    if (display) {
+        display.innerText = `${count} Song${count !== 1 ? 's' : ''}`;
+    }
 }
 
 // Funktionen für das HTML global sichtbar machen
