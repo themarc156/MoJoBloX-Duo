@@ -216,6 +216,7 @@
 
 <script type="module">
     let draggedElement = null;
+    let activeFadeInput = null;
 
 // Firebase Imports
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -478,7 +479,7 @@ window.saveAsTemplate = async (djId) => {
     div.className = 'song-item';
     div.draggable = true;
     
-    // URL speichern, damit wir sie für den Übergangstest abrufen können
+    // URL speichern für Übergangstest
     const url = URL.createObjectURL(file);
     div.dataset.url = url;
 
@@ -486,18 +487,15 @@ window.saveAsTemplate = async (djId) => {
     div.ondragend = (e) => { e.target.classList.remove('dragging'); };
     
     const name = file.name.replace(/\.[^/.]+$/, "");
-    
-    // Standardwert für Fade (könnte später durch DB-Daten ersetzt werden)
     const fadeTime = 0; 
 
     div.innerHTML = `
         <div class="song-info" title="${name}">${name}</div>
         <div class="controls-wrapper">
-            <div class="fade-control">
-                <input type="number" class="fade-input" value="${fadeTime}" min="0" max="10" 
-                       onchange="saveFadeTime(this)" title="Fade-In Dauer (Sek.)">
-                <span>s</span>
-            </div>
+            <input type="hidden" class="fade-input" value="${fadeTime}">
+            
+            <button class="fade-btn" onclick="openFadeOverlay(this)" title="Fade-In einstellen">⏱</button>
+            
             <button class="test-transition-btn" onclick="testTransition(this)" title="Übergang testen">🔁</button>
             <button class="play-btn" onclick="togglePlay(this, '${url}')">▶</button>
             <button class="delete-btn" onclick="deleteItem(this.closest('.song-item'))">❌</button>
@@ -797,7 +795,7 @@ window.testTransition = async (btn) => {
     }, 20000);
 };
 
-let activeFadeInput = null;
+
 
 // Öffnet das Overlay
 window.openFadeOverlay = (btn) => {
