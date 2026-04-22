@@ -716,23 +716,22 @@ window.handleTitleChange = (element) => {
 };
 
 window.saveFadeTime = (inputElement) => {
-    // 1. Wert als Zahl speichern
-    let val = parseInt(inputElement.value);
+    // 1. Wert als Zahl speichern (mit Fallback auf 0, falls leer)
+    let val = parseInt(inputElement.value) || 0;
     
-    // Sicherheit: Wert zwischen 0 und 10 halten
+    // GEÄNDERT: Sicherheit: Wert jetzt zwischen 0 und 20 halten
     if (val < 0) val = 0;
-    if (val > 10) val = 10;
+    if (val > 20) val = 20; 
+    
     inputElement.value = val;
 
-    // 2. DJ-Kontext finden (um zu wissen, wohin wir syncen sollen)
+    // 2. DJ-Kontext finden
     const container = inputElement.closest('.content-area');
     if (!container) return;
     
     const djId = container.id.replace('content-', '');
     
     // 3. Datenbank-Sync auslösen
-    // Da deine syncToFirebase-Funktion den DOM liest, 
-    // ist der neue Wert jetzt automatisch im Sync enthalten.
     syncToFirebase(djId);
     
     console.log(`Fade-Time für Song in ${djId} auf ${val}s gesetzt.`);
