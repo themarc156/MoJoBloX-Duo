@@ -305,18 +305,18 @@ function createSongElementFromData(title, djKey, fadeTime) {
     div.className = 'song-item';
     div.draggable = true;
     
-    // WICHTIG: Speichere hier den djKey im Element. 
     div.dataset.djKey = djKey; 
 
     div.ondragstart = (e) => { draggedElement = e.target; e.target.classList.add('dragging'); };
     div.ondragend = (e) => { e.target.classList.remove('dragging'); };
     
-    // Falls fadeTime undefined oder null ist, setzen wir es standardmäßig auf 0
     const displayFadeTime = fadeTime || 0; 
 
     div.innerHTML = `
     <div class="song-info" title="${title}">${title}</div>
     <div class="controls-wrapper">
+        <span class="fade-badge" style="margin-right: 10px; font-weight: bold; color: #4a90e2;">${displayFadeTime}s</span>
+        
         <input type="number" class="fade-input" value="${displayFadeTime}" min="0" max="20" style="display:none">
         
         <button class="fade-btn" onclick="openFadeOverlay(this)" title="Fade-In einstellen">⏱</button>
@@ -722,14 +722,23 @@ window.handleTitleChange = (element) => {
 };
 
 window.saveFadeTime = (inputElement) => {
-    // 1. Wert als Zahl speichern (mit Fallback auf 0, falls leer)
+    // 1. Wert verarbeiten
     let val = parseInt(inputElement.value) || 0;
     
-    // GEÄNDERT: Sicherheit: Wert jetzt zwischen 0 und 20 halten
+    // Sicherheit: Wert zwischen 0 und 15 halten
     if (val < 0) val = 0;
     if (val > 15) val = 15; 
     
     inputElement.value = val;
+
+    // --- NEU: Badge sofort aktualisieren ---
+    const songItem = inputElement.closest('.song-item');
+    if (songItem) {
+        const badge = songItem.querySelector('.fade-badge');
+        if (badge) {
+            badge.innerText = val + 's';
+        }
+    }
 
     // 2. DJ-Kontext finden
     const container = inputElement.closest('.content-area');
@@ -884,6 +893,14 @@ window.saveFadeFromOverlay = () => {
     }
     document.getElementById('fade-overlay').style.display = 'none';
 };
+
+function updateFadeDisplay(songItem) {
+    const input = songItem.querySelector('.fade-input');
+    const display = songItem.querySelector('.fade-display');
+    if (display && input) {
+        display.innerText = input.value + 's';
+    }
+}
 
 // Funktionen für das HTML global sichtbar machen
 window.addSongs = addSongs;
