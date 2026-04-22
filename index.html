@@ -741,7 +741,7 @@ window.saveFadeTime = (inputElement) => {
 
 
 window.testTransition = async (btn) => {
-    console.log("--- Test-Übergang gestartet (45s Fenster) ---");
+    console.log("--- Test-Übergang gestartet (50s Fenster mit 5s Puffer) ---");
 
     const cleanup = (audio) => {
         if (audio) {
@@ -789,18 +789,20 @@ window.testTransition = async (btn) => {
             new Promise(r => audio2.onloadedmetadata = r)
         ]);
 
+        // Puffer-Logik: Starte 25 Sek. vor Ende (statt 20)
         const duration = isNaN(audio1.duration) ? 0 : audio1.duration;
-        const startPoint = Math.max(0, duration - 20);
+        const startPoint = Math.max(0, duration - 25);
         audio1.currentTime = startPoint;
         audio1.play();
 
         const fadeInput = currentItem.querySelector('.fade-input');
-        const fadeTime = Math.min(20, parseInt(fadeInput.value) || 0); // Max 20s
+        const fadeTime = Math.min(20, parseInt(fadeInput.value) || 0);
         
-        // Berechne das Delay
-        const delay = Math.max(0, 20 - fadeTime);
+        // Berechnung: 5 Sekunden Puffer + (20s - FadeTime)
+        // Das sorgt dafür, dass Song 2 exakt an der 20s-vor-Ende-Marke
+        // relativ zum Übergang startet.
+        const delay = 5 + Math.max(0, 20 - fadeTime);
 
-        // Die Start-Logik für Song 2 in eine Funktion ausgelagert
         const startSong2 = () => {
             console.log("Song 2 startet!");
             audio2.volume = 0;
@@ -820,20 +822,15 @@ window.testTransition = async (btn) => {
             }
         };
 
-        // ENTSCHEIDENDER TEIL: 
-        // Wenn kein Delay nötig ist, starte SOFORT, nicht über setTimeout
-        if (delay === 0) {
-            startSong2();
-        } else {
-            setTimeout(startSong2, delay * 1000);
-        }
+        // Starten mit Puffer
+        setTimeout(startSong2, delay * 1000);
 
-        // Aufräumen nach 45 Sekunden
+        // Aufräumen nach 50 Sekunden (25s Puffer/Song1 + 25s Song2)
         setTimeout(() => {
             cleanup(audio1);
             cleanup(audio2);
             console.log("Test-Übergang beendet.");
-        }, 45000);
+        }, 50000);
 
     } catch (e) {
         console.error("Fehler:", e);
