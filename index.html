@@ -768,11 +768,20 @@ window.testTransition = async (btn) => {
     cleanup(activeTestAudio1);
     cleanup(activeTestAudio2);
 
+    // 1. Kontext und Song-Liste ermitteln
     const currentItem = btn.closest('.song-item');
-    const nextItem = currentItem.nextElementSibling;
     const djKey = currentItem.dataset.djKey;
+    
+    // Wir suchen den übergeordneten Container, um alle Songs dieser Spalte zu finden
+    const contentArea = currentItem.closest('.content-area');
+    const allSongs = Array.from(contentArea.querySelectorAll('.song-item'));
+    
+    // 2. Index des aktuellen Songs bestimmen und den Nachfolger holen
+    const currentIndex = allSongs.indexOf(currentItem);
+    const nextItem = allSongs[currentIndex + 1];
 
-    if (!nextItem || !nextItem.classList.contains('song-item')) {
+    // 3. Prüfung: Gibt es einen nächsten Song?
+    if (!nextItem) {
         alert("Kein nachfolgender Song gefunden!");
         return;
     }
