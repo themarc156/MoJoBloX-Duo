@@ -740,7 +740,7 @@ window.saveFadeTime = (inputElement) => {
 
 
 window.testTransition = async (btn) => {
-    console.log("--- Test-Übergang mit exakter Zeit-Synchronisation gestartet ---");
+    console.log("--- Test-Übergang gestartet (Dynamischer Puffer) ---");
 
     const cleanup = (audio) => {
         if (audio) {
@@ -788,22 +788,25 @@ window.testTransition = async (btn) => {
             new Promise(r => audio2.onloadedmetadata = r)
         ]);
 
-        // Puffer-Logik: Starte 25 Sek. vor Ende
-        const duration = isNaN(audio1.duration) ? 0 : audio1.duration;
-        const startPoint = Math.max(0, duration - 25);
-        audio1.currentTime = startPoint;
-        audio1.play();
-
+        // 1. Zuerst die Fade-Zeit holen
         const fadeInput = currentItem.querySelector('.fade-input');
         const fadeTime = Math.min(15, parseInt(fadeInput.value) || 0);
 
+        // 2. Start-Logik: Dynamischer Puffer (Fade + 5s)
+        const duration = isNaN(audio1.duration) ? 0 : audio1.duration;
+        const startOffset = fadeTime + 5; 
+        const startPoint = Math.max(0, duration - startOffset);
+        
+        console.log(`Starte Song 1 bei ${startPoint}s (Offset: ${startOffset}s vor Ende)`);
+        
+        audio1.currentTime = startPoint;
+        audio1.play();
+
         // EXAKTER TRIGGER-PUNKT:
-        // Wenn Fade 20s ist, starte Song 2 bei (Dauer - 20s).
-        // Wenn Fade 5s ist, starte Song 2 bei (Dauer - 5s).
+        // Song 2 startet genau dann, wenn der Fade-In beginnen soll
         const triggerTime = duration - fadeTime;
         let transitionStarted = false;
 
-        // Die Start-Logik für Song 2
         const startSong2 = () => {
             console.log("Trigger-Punkt erreicht! Song 2 startet.");
             audio2.volume = 0;
@@ -826,8 +829,8 @@ window.testTransition = async (btn) => {
         // Das Herzstück: "Höre" auf den Song-Fortschritt
         audio1.ontimeupdate = () => {
             if (!transitionStarted && audio1.currentTime >= triggerTime) {
-                transitionStarted = true; // Sicherstellen, dass nur 1x gefeuert wird
-                audio1.ontimeupdate = null; // Listener entfernen
+                transitionStarted = true;
+                audio1.ontimeupdate = null;
                 startSong2();
             }
         };
