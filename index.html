@@ -318,7 +318,7 @@ function createSongElementFromData(title, djKey) {
     div.innerHTML = `
     <div class="song-info" title="${title}">${title}</div>
     <div class="controls-wrapper">
-        <input type="number" class="fade-input" value="${fadeTime}" min="0" max="15" style="display:none">
+        <input type="number" class="fade-input" value="${fadeTime}" min="0" max="20" style="display:none">
         
         <button class="fade-btn" onclick="openFadeOverlay(this)" title="Fade-In einstellen">⏱</button>
         <button class="test-transition-btn" onclick="testTransition(this)" title="Übergang testen">🔁</button>
@@ -798,7 +798,7 @@ window.testTransition = async (btn) => {
         audio1.play();
 
         const fadeInput = currentItem.querySelector('.fade-input');
-        const fadeTime = Math.min(15, parseInt(fadeInput.value) || 0); // Max 15s
+        const fadeTime = Math.min(20, parseInt(fadeInput.value) || 0); // Max 15s
         
         // Song 2 Startzeit berechnen: 
         // Wenn wir Song 1 20s lang spielen wollen und einen Fade von X s haben,
@@ -885,8 +885,8 @@ window.saveFadeFromOverlay = saveFadeFromOverlay;
 
 <div id="fade-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center;">
     <div style="background: #2a2a2a; padding: 20px; border-radius: 10px; text-align: center; color: white;">
-        <h3>Fade-In Zeit (0-10s)</h3>
-<input type="range" id="fade-slider" min="0" max="15" step="1" value="0" oninput="document.getElementById('fade-value-display').innerText = this.value">
+        <h3>Fade-In Zeit (0-20s)</h3>
+<input type="range" id="fade-slider" min="0" max="20" step="1" value="0" oninput="document.getElementById('fade-value-display').innerText = this.value">
         <p><span id="fade-value-display">0</span> Sekunden</p>
         <button onclick="saveFadeFromOverlay()">Speichern</button>
     </div>
