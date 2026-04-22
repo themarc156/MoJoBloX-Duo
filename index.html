@@ -743,7 +743,6 @@ window.saveFadeTime = (inputElement) => {
 window.testTransition = async (btn) => {
     console.log("--- Test-Übergang gestartet (45s Fenster) ---");
 
-    // Cleanup-Helper
     const cleanup = (audio) => {
         if (audio) {
             audio.pause();
@@ -764,7 +763,6 @@ window.testTransition = async (btn) => {
         return;
     }
 
-    // Datei-Lader
     const getAudioUrl = async (songTitle) => {
         const lib = djLibraries[djKey];
         const handle = lib.get(songTitle);
@@ -791,30 +789,28 @@ window.testTransition = async (btn) => {
             new Promise(r => audio2.onloadedmetadata = r)
         ]);
 
-        // Song 1 startet 20 Sekunden vor Ende
         const duration = isNaN(audio1.duration) ? 0 : audio1.duration;
         const startPoint = Math.max(0, duration - 20);
         audio1.currentTime = startPoint;
         audio1.play();
 
         const fadeInput = currentItem.querySelector('.fade-input');
-        const fadeTime = Math.min(20, parseInt(fadeInput.value) || 0); // Max 15s
+        const fadeTime = Math.min(20, parseInt(fadeInput.value) || 0); // Max 20s
         
-        // Song 2 Startzeit berechnen: 
-        // Wenn wir Song 1 20s lang spielen wollen und einen Fade von X s haben,
-        // startet Song 2 bei (20 - FadeTime).
+        // Berechne das Delay
         const delay = Math.max(0, 20 - fadeTime);
 
-        setTimeout(() => {
+        // Die Start-Logik für Song 2 in eine Funktion ausgelagert
+        const startSong2 = () => {
+            console.log("Song 2 startet!");
             audio2.volume = 0;
             audio2.play();
 
-            // Fade-In Logik (über die gewählte fadeTime)
             if (fadeTime === 0) {
                 audio2.volume = 1;
             } else {
                 let vol = 0;
-                const steps = 30; // Mehr Schritte für sanfteren Fade
+                const steps = 30;
                 const interval = (fadeTime * 1000) / steps;
                 const fadeInterval = setInterval(() => {
                     vol += (1 / steps);
@@ -822,9 +818,17 @@ window.testTransition = async (btn) => {
                     audio2.volume = vol;
                 }, interval);
             }
-        }, delay * 1000);
+        };
 
-        // Aufräumen nach 45 Sekunden (20s Song1-Teil + 25s Song2-Teil)
+        // ENTSCHEIDENDER TEIL: 
+        // Wenn kein Delay nötig ist, starte SOFORT, nicht über setTimeout
+        if (delay === 0) {
+            startSong2();
+        } else {
+            setTimeout(startSong2, delay * 1000);
+        }
+
+        // Aufräumen nach 45 Sekunden
         setTimeout(() => {
             cleanup(audio1);
             cleanup(audio2);
