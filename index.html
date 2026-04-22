@@ -304,8 +304,8 @@ function createSongElementFromData(title, djKey, fadeTime) {
     const div = document.createElement('div');
     div.className = 'song-item';
     div.draggable = true;
+    
     div.dataset.djKey = djKey; 
-    div.dataset.fadeEnabled = "true"; // Standard: aktiv
 
     div.ondragstart = (e) => { draggedElement = e.target; e.target.classList.add('dragging'); };
     div.ondragend = (e) => { e.target.classList.remove('dragging'); };
@@ -320,8 +320,8 @@ function createSongElementFromData(title, djKey, fadeTime) {
         <input type="number" class="fade-input" value="${displayFadeTime}" min="0" max="20" style="display:none">
         
         <button class="fade-btn" onclick="openFadeOverlay(this)" title="Fade-In einstellen">⏱</button>
-        <button class="fade-toggle-btn active" onclick="toggleFade(this)" title="Fade-In an/aus">🔁</button>
-        <button class="play-btn" onclick="handlePlay(this, '${title}', '${djKey}')">▶</button>
+        <button class="test-transition-btn" onclick="testTransition(this)" title="Übergang testen">🔁</button>
+        <button class="play-btn" onclick="toggleSong(this, '${title}', '${djKey}')">▶</button>
         <button class="delete-btn" onclick="deleteItem(this.closest('.song-item'))">❌</button>
     </div>`;
     return div;
@@ -901,38 +901,6 @@ function updateFadeDisplay(songItem) {
         display.innerText = input.value + 's';
     }
 }
-
-// 1. Die neue Logik-Weiche für den Play-Button
-window.handlePlay = (btn, title, djKey) => {
-    const songItem = btn.closest('.song-item');
-    
-    // Prüfen, ob der Fade-In aktiviert ist
-    if (songItem.dataset.fadeEnabled === "true") {
-        console.log("Fade-In aktiv: Starte Übergangs-Test...");
-        // Wir rufen deine existierende testTransition Funktion auf
-        testTransition(btn);
-    } else {
-        console.log("Fade-In deaktiviert: Starte Song ohne Übergang.");
-    }
-    
-    // Danach den Song ganz normal "live" abspielen (deine existierende Funktion)
-    toggleSong(btn, title, djKey);
-};
-
-// 2. Den Status umschalten
-window.toggleFade = (btn) => {
-    const songItem = btn.closest('.song-item');
-    const isEnabled = songItem.dataset.fadeEnabled === "true";
-    
-    // Status invertieren
-    songItem.dataset.fadeEnabled = isEnabled ? "false" : "true";
-    
-    // Visuelles Feedback
-    btn.style.opacity = !isEnabled ? "1" : "0.4";
-    btn.classList.toggle('active', !isEnabled);
-    
-    console.log(`Fade-In für diesen Song: ${songItem.dataset.fadeEnabled}`);
-};
 
 // Funktionen für das HTML global sichtbar machen
 window.addSongs = addSongs;
