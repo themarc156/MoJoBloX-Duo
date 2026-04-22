@@ -741,7 +741,7 @@ window.saveFadeTime = (inputElement) => {
 
 
 window.testTransition = async (btn) => {
-    console.log("--- Test-Übergang gestartet (50s Fenster mit 5s Puffer) ---");
+    console.log("--- Test-Übergang mit exakter Zeit-Synchronisation gestartet ---");
 
     const cleanup = (audio) => {
         if (audio) {
@@ -789,7 +789,7 @@ window.testTransition = async (btn) => {
             new Promise(r => audio2.onloadedmetadata = r)
         ]);
 
-        // Puffer-Logik: Starte 25 Sek. vor Ende (statt 20)
+        // Puffer-Logik: Starte 25 Sek. vor Ende
         const duration = isNaN(audio1.duration) ? 0 : audio1.duration;
         const startPoint = Math.max(0, duration - 25);
         audio1.currentTime = startPoint;
@@ -797,14 +797,16 @@ window.testTransition = async (btn) => {
 
         const fadeInput = currentItem.querySelector('.fade-input');
         const fadeTime = Math.min(20, parseInt(fadeInput.value) || 0);
-        
-        // Berechnung: 5 Sekunden Puffer + (20s - FadeTime)
-        // Das sorgt dafür, dass Song 2 exakt an der 20s-vor-Ende-Marke
-        // relativ zum Übergang startet.
-        const delay = 5 + Math.max(0, 20 - fadeTime);
 
+        // EXAKTER TRIGGER-PUNKT:
+        // Wenn Fade 20s ist, starte Song 2 bei (Dauer - 20s).
+        // Wenn Fade 5s ist, starte Song 2 bei (Dauer - 5s).
+        const triggerTime = duration - fadeTime;
+        let transitionStarted = false;
+
+        // Die Start-Logik für Song 2
         const startSong2 = () => {
-            console.log("Song 2 startet!");
+            console.log("Trigger-Punkt erreicht! Song 2 startet.");
             audio2.volume = 0;
             audio2.play();
 
@@ -822,10 +824,16 @@ window.testTransition = async (btn) => {
             }
         };
 
-        // Starten mit Puffer
-        setTimeout(startSong2, delay * 1000);
+        // Das Herzstück: "Höre" auf den Song-Fortschritt
+        audio1.ontimeupdate = () => {
+            if (!transitionStarted && audio1.currentTime >= triggerTime) {
+                transitionStarted = true; // Sicherstellen, dass nur 1x gefeuert wird
+                audio1.ontimeupdate = null; // Listener entfernen
+                startSong2();
+            }
+        };
 
-        // Aufräumen nach 50 Sekunden (25s Puffer/Song1 + 25s Song2)
+        // Aufräumen nach 50 Sekunden
         setTimeout(() => {
             cleanup(audio1);
             cleanup(audio2);
