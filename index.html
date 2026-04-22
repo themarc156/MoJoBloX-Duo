@@ -337,12 +337,17 @@ function getDOMData(djId) {
 
     container.querySelectorAll(':scope > .block, :scope > .song-item').forEach(el => {
         if (el.classList.contains('block')) {
-            const songs = Array.from(el.querySelectorAll('.song-item')).map(song => ({
-                // Sicherer Zugriff mit ?. und Fallback-Wert
-                title: song.querySelector('.song-info')?.innerText || "Unbekannter Titel",
-                // Fade-Time aus dem versteckten Input mitnehmen
-                fadeTime: song.querySelector('.fade-input')?.value || 0 
-            }));
+            const songs = Array.from(el.querySelectorAll('.song-item')).map(song => {
+                const fadeInput = song.querySelector('.fade-input');
+                // DEBUG: Prüfen, ob wir das Element überhaupt finden
+                if (!fadeInput) console.warn("Fade-Input nicht gefunden in:", song);
+                
+                return {
+                    title: song.querySelector('.song-info')?.innerText || "Unbekannter Titel",
+                    // parseInt sorgt dafür, dass wir eine echte Zahl speichern (15 statt "15")
+                    fadeTime: parseInt(fadeInput?.value) || 0 
+                };
+            });
             data.blocklist.push({
                 type: 'block',
                 id: el.id,
@@ -350,14 +355,16 @@ function getDOMData(djId) {
                 songs: songs
             });
         } else if (el.classList.contains('song-item')) {
+            const fadeInput = el.querySelector('.fade-input');
             data.blocklist.push({
                 type: 'song',
-                // Sicherer Zugriff mit ?.
                 title: el.querySelector('.song-info')?.innerText || "Unbekannter Titel",
-                fadeTime: el.querySelector('.fade-input')?.value || 0
+                fadeTime: parseInt(fadeInput?.value) || 0
             });
         }
     });
+    
+    console.log(`DEBUG: Daten für ${djId} gesammelt:`, data); // Hier siehst du, ob die fadeTime dabei ist!
     return data;
 }
 
