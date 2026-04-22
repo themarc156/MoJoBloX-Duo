@@ -740,7 +740,7 @@ window.saveFadeTime = (inputElement) => {
 
 
 window.testTransition = async (btn) => {
-    console.log("--- Test-Übergang gestartet (Dynamischer Puffer) ---");
+    console.log("--- Test-Übergang gestartet (Dynamischer Puffer & Stopp-Logik) ---");
 
     const cleanup = (audio) => {
         if (audio) {
@@ -788,7 +788,7 @@ window.testTransition = async (btn) => {
             new Promise(r => audio2.onloadedmetadata = r)
         ]);
 
-        // 1. Zuerst die Fade-Zeit holen
+        // 1. Fade-Zeit holen
         const fadeInput = currentItem.querySelector('.fade-input');
         const fadeTime = Math.min(15, parseInt(fadeInput.value) || 0);
 
@@ -802,16 +802,15 @@ window.testTransition = async (btn) => {
         audio1.currentTime = startPoint;
         audio1.play();
 
-        // EXAKTER TRIGGER-PUNKT:
-        // Song 2 startet genau dann, wenn der Fade-In beginnen soll
         const triggerTime = duration - fadeTime;
         let transitionStarted = false;
 
         const startSong2 = () => {
-            console.log("Trigger-Punkt erreicht! Song 2 startet.");
+            console.log(`Trigger-Punkt erreicht! Song 2 startet. (Stopp in ${fadeTime + 5}s)`);
             audio2.volume = 0;
             audio2.play();
 
+            // Fade-In Logik
             if (fadeTime === 0) {
                 audio2.volume = 1;
             } else {
@@ -824,6 +823,12 @@ window.testTransition = async (btn) => {
                     audio2.volume = vol;
                 }, interval);
             }
+
+            // NEU: Stoppt Song 2 nach dem Fade + 5 Sekunden
+            setTimeout(() => {
+                console.log("Song 2: Nachlauf beendet -> Stopp.");
+                cleanup(audio2);
+            }, (fadeTime + 5) * 1000);
         };
 
         // Das Herzstück: "Höre" auf den Song-Fortschritt
@@ -835,11 +840,11 @@ window.testTransition = async (btn) => {
             }
         };
 
-        // Aufräumen nach 50 Sekunden
+        // Sicherheits-Aufräumen (falls etwas hängen bleibt)
         setTimeout(() => {
             cleanup(audio1);
-            cleanup(audio2);
-            console.log("Test-Übergang beendet.");
+            // Wir clearen audio2 nicht, das macht jetzt die neue Stopp-Logik
+            console.log("Test-Übergang: Globaler Not-Aus nach 50s.");
         }, 50000);
 
     } catch (e) {
