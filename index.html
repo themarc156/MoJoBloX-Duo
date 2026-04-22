@@ -269,16 +269,16 @@ window.loadDJData = async (djId) => {
                 div.innerHTML = `
                 <div class="block-header">
                     <button class="toggle-btn" onclick="toggleSingleBlock(this)">▼</button>
-<span class="block-title" contenteditable="false" onblur="handleTitleChange(this)">${item.title}</span>
+                    <span class="block-title" contenteditable="false" onblur="handleTitleChange(this)">${item.title}</span>
                     <span class="block-count">0</span>
                     <button class="delete-btn" onclick="deleteItem(this.closest('.block'))">❌</button>
                 </div>
                 <div class="song-list" ondragover="handleDragOver(event)"></div>`;
                 
                 const songList = div.querySelector('.song-list');
-                // Songs im Block hinzufügen
+                // Songs im Block hinzufügen (fadeTime wird hier übergeben)
                 item.songs.forEach(song => {
-                    songList.appendChild(createSongElementFromData(song.title, djKey));
+                    songList.appendChild(createSongElementFromData(song.title, djKey, song.fadeTime));
                 });
                 
                 container.appendChild(div);
@@ -287,8 +287,8 @@ window.loadDJData = async (djId) => {
                 updateBlockCount(div);
 
             } else if (item.type === 'song') {
-                // --- LOSEN SONG RENDERN ---
-                container.appendChild(createSongElementFromData(item.title, djKey));
+                // --- LOSEN SONG RENDERN (fadeTime wird hier übergeben) ---
+                container.appendChild(createSongElementFromData(item.title, djKey, item.fadeTime));
             }
         });
 
@@ -300,25 +300,24 @@ window.loadDJData = async (djId) => {
 };
 
 // Hilfsfunktion zum Erstellen der Song-Elemente beim Laden
-function createSongElementFromData(title, djKey) {
+function createSongElementFromData(title, djKey, fadeTime) {
     const div = document.createElement('div');
     div.className = 'song-item';
     div.draggable = true;
     
     // WICHTIG: Speichere hier den djKey im Element. 
-    // Dann weiß testTransition später genau, wo die Datei liegt.
     div.dataset.djKey = djKey; 
 
     div.ondragstart = (e) => { draggedElement = e.target; e.target.classList.add('dragging'); };
     div.ondragend = (e) => { e.target.classList.remove('dragging'); };
     
-    // FadeTime (falls du das später aus der DB lädst)
-    const fadeTime = 0; 
+    // Falls fadeTime undefined oder null ist, setzen wir es standardmäßig auf 0
+    const displayFadeTime = fadeTime || 0; 
 
     div.innerHTML = `
     <div class="song-info" title="${title}">${title}</div>
     <div class="controls-wrapper">
-        <input type="number" class="fade-input" value="${fadeTime}" min="0" max="20" style="display:none">
+        <input type="number" class="fade-input" value="${displayFadeTime}" min="0" max="20" style="display:none">
         
         <button class="fade-btn" onclick="openFadeOverlay(this)" title="Fade-In einstellen">⏱</button>
         <button class="test-transition-btn" onclick="testTransition(this)" title="Übergang testen">🔁</button>
